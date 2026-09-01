@@ -111,8 +111,19 @@ def main() -> None:
         if isinstance(payload.get("prompt"), list)
     }
     assert {1, 9, 25, 57, 121, 249, 8192, 9500} <= prompt_lengths
-    assert any(payload.get("n") == 2 for payload in completion_payloads)
-    assert any(payload.get("n") == 4 for payload in completion_payloads)
+    c2_payloads = [
+        payload
+        for payload in completion_payloads
+        if "ds4fv-release-c2-" in payload.get("cache_salt", "")
+    ]
+    c4_payloads = [
+        payload
+        for payload in completion_payloads
+        if "ds4fv-release-c4-" in payload.get("cache_salt", "")
+    ]
+    assert len(c2_payloads) == 2
+    assert len(c4_payloads) == 4
+    assert all(payload.get("n", 1) == 1 for payload in c2_payloads + c4_payloads)
 
     chat_payloads = [
         payload for path, payload in REQUESTS if path == "/v1/chat/completions"

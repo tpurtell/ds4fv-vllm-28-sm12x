@@ -14,6 +14,7 @@ import urllib.error
 import urllib.request
 import uuid
 import zlib
+from concurrent.futures import ThreadPoolExecutor
 
 
 PROMPT = """You are editing an async Python worker pool. Return only a complete
@@ -30,8 +31,14 @@ def request_json(
         data=None if payload is None else json.dumps(payload).encode(),
         headers={"Content-Type": "application/json"},
     )
-    with urllib.request.urlopen(request, timeout=timeout) as response:
-        return json.load(response)
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return json.load(response)
+    except urllib.error.HTTPError as error:
+        detail = error.read().decode("utf-8", errors="replace")
+        raise SystemExit(
+            f"{path} returned HTTP {error.code}: {detail[:1000]}"
+        ) from error
 
 
 def request_ok(base_url: str, path: str, timeout: float) -> None:
@@ -73,6 +80,30 @@ def timed_request(
         flush=True,
     )
     return result
+
+
+def timed_concurrent_requests(
+    label: str,
+    base_url: str,
+    path: str,
+    payloads: list[dict],
+    timeout: float,
+) -> list[dict]:
+    started = time.perf_counter()
+    with ThreadPoolExecutor(max_workers=len(payloads)) as executor:
+        futures = [
+            executor.submit(request_json, base_url, path, payload, timeout)
+            for payload in payloads
+        ]
+        results = [future.result() for future in futures]
+    for index, result in enumerate(results):
+        require_choices(result, 1, f"{label} request {index + 1}")
+    print(
+        f"DS4FV release startup {label} completed in "
+        f"{time.perf_counter() - started:.2f}s",
+        flush=True,
+    )
+    return results
 
 
 def exact_token_prefix(
@@ -229,13 +260,18 @@ def main() -> None:
         {**base_completion, "n": 1},
         args.request_timeout,
     )
-    timed_request(
+    timed_concurrent_requests(
         "greedy C2",
         args.base_url,
         "/v1/completions",
-        {**base_completion, "n": 2},
+        [
+            {
+                **base_completion,
+                "cache_salt": f"ds4fv-release-c2-{index}-{nonce}",
+            }
+            for index in range(2)
+        ],
         args.request_timeout,
-        expected_choices=2,
     )
 
     long_tokens = exact_token_prefix(args.base_url, model, 8192, args.request_timeout)
@@ -370,19 +406,22 @@ def main() -> None:
             )
 
     for pass_index in range(args.passes):
-        timed_request(
+        timed_concurrent_requests(
             f"C4 pass {pass_index + 1}/{args.passes}",
             args.base_url,
             "/v1/completions",
-            {
-                **base_completion,
-                "n": 4,
-                "max_tokens": 256,
-                "min_tokens": 256,
-                "cache_salt": f"ds4fv-release-c4-{pass_index}-{nonce}",
-            },
+            [
+                {
+                    **base_completion,
+                    "max_tokens": 256,
+                    "min_tokens": 256,
+                    "cache_salt": (
+                        f"ds4fv-release-c4-{pass_index}-{index}-{nonce}"
+                    ),
+                }
+                for index in range(4)
+            ],
             args.request_timeout,
-            expected_choices=4,
         )
         time.sleep(1)
 

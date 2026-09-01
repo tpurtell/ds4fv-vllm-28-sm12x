@@ -65,7 +65,9 @@ def main() -> None:
         "image_counts = (1, 4, 16)",
         '"structured output"',
         '"tool parser"',
-        '"n": 4',
+        "timed_concurrent_requests(",
+        "for index in range(2)",
+        "for index in range(4)",
     ):
         assert fragment in warmup
 
