@@ -48,9 +48,10 @@ ARMS = {
     "code": PromptArm(
         "code",
         "Write a Python function merge_intervals(intervals) that merges overlapping "
-        "integer intervals. Include type hints, a short docstring, and three assert-based "
-        "examples. Return only one Python code block.",
-        320,
+        "integer intervals. Include type hints, a short docstring, and exactly three "
+        "concise assert-based examples. Return only one Python code block and keep the "
+        "complete response under 450 tokens.",
+        512,
     ),
     "math": PromptArm(
         "reasoning",
@@ -60,16 +61,18 @@ ARMS = {
     ),
     "fable": PromptArm(
         "creative-prose",
-        "Write a self-contained fable of 140 to 170 words about two parrots who disagree "
-        "about sharing credit. End with a one-sentence moral.",
+        "Write a self-contained fable of 140 to 180 words about two parrots who disagree "
+        "about sharing credit. End with one sentence that starts with 'Moral:' and "
+        "explicitly includes both words 'share' and 'credit'.",
         256,
     ),
     "hello": PromptArm("short-response", "hi", 32),
     "topic": PromptArm(
         "exposition",
-        "Explain virtual memory to a junior programmer in five concise bullet points, "
-        "including paging, page faults, and the role of the TLB.",
-        384,
+        "Explain virtual memory to a junior programmer in exactly five bullet points. "
+        "Use one sentence of at most 25 words per bullet, no heading or closing text, "
+        "and include paging, page faults, and the role of the TLB.",
+        256,
     ),
     "structured-json-normal": PromptArm(
         "structured-output", STRUCTURED_PROMPT, 128, score_weight=0.5
@@ -83,8 +86,9 @@ ARMS = {
     ),
     "multilingual": PromptArm(
         "multilingual",
-        "請用繁體中文，以四個簡短條列解釋什麼是寫入時複製（copy-on-write），"
-        "並包含一個行程 fork 後修改記憶體頁面的例子。",
+        "請用繁體中文，以正好四個單行條列解釋什麼是寫入時複製（copy-on-write）。"
+        "每個條列限一個句子且最多四十個中文字，不要標題、前言、子條列或結語；"
+        "其中一個條列必須包含行程 fork 後修改記憶體頁面的例子。",
         384,
     ),
 }
@@ -262,8 +266,8 @@ def validate_semantic_contract(arm_id: str, content: str) -> tuple[bool, list[st
             issues.append("response does not show the requested calculation inputs")
     elif arm_id == "fable":
         words = re.findall(r"\b[\w'-]+\b", stripped, flags=re.UNICODE)
-        if not 140 <= len(words) <= 170:
-            issues.append(f"fable has {len(words)} words, outside 140..170")
+        if not 140 <= len(words) <= 180:
+            issues.append(f"fable has {len(words)} words, outside 140..180")
         final_sentence = re.split(r"(?<=[.!?])\s+", stripped)[-1].casefold()
         if not any(
             term in final_sentence
@@ -325,6 +329,9 @@ def compact_record(
         record["structured_contract_passed"] = structured_passed(content)
     if arm_id != "orchid":
         passed, issues = validate_semantic_contract(arm_id, content)
+        if raw["finish_reason"] == "length":
+            issues.append("response hit the output token limit")
+            passed = False
         record["quality_contract_passed"] = passed
         record["quality_contract_issues"] = issues
     if arm_id == "orchid":

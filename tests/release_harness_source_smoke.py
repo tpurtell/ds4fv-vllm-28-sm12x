@@ -27,8 +27,13 @@ def main() -> None:
     assert sum(arm.score_weight for arm in content.ARMS.values()) == 7.0
     assert content.ARMS["structured-json-normal"].score_weight == 0.5
     assert content.ARMS["structured-json-constrained"].score_weight == 0.5
-    assert content.ARMS["topic"].max_tokens == 384
+    assert content.ARMS["code"].max_tokens == 512
+    assert content.ARMS["topic"].max_tokens == 256
     assert content.ARMS["multilingual"].max_tokens == 384
+    assert "exactly three" in content.ARMS["code"].prompt
+    assert "140 to 180 words" in content.ARMS["fable"].prompt
+    assert "Moral:" in content.ARMS["fable"].prompt
+    assert "正好四個單行條列" in content.ARMS["multilingual"].prompt
 
     valid_json = (
         '{"path":"src/cache.rs","operation":"replace","line_start":41,'
@@ -38,6 +43,25 @@ def main() -> None:
         passed, issues = content.validate_semantic_contract(arm_id, valid_json)
         assert passed, issues
     assert not content.validate_semantic_contract("topic", "- Paging only.")[0]
+    truncated = content.compact_record(
+        arm_id="hello",
+        arm=content.ARMS["hello"],
+        repeat=1,
+        timed=True,
+        raw={
+            "content": "Hello",
+            "prompt_tokens": 1,
+            "completion_tokens": 32,
+            "finish_reason": "length",
+            "ttft_s": 0.1,
+            "decode_s": 0.5,
+            "decode_tok_s": 62.0,
+        },
+    )
+    assert not truncated["quality_contract_passed"]
+    assert "response hit the output token limit" in truncated[
+        "quality_contract_issues"
+    ]
     summary = content.summarize(
         [
             {
