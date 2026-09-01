@@ -81,7 +81,7 @@ def main() -> None:
     old_argv = sys.argv
     old_dspark_tokens = os.environ.get("DSPARK_TOKENS")
     try:
-        os.environ["DSPARK_TOKENS"] = "6"
+        os.environ["DSPARK_TOKENS"] = "3"
         sys.argv = [
             str(path),
             "--server-pid",
@@ -110,7 +110,7 @@ def main() -> None:
         for payload in completion_payloads
         if isinstance(payload.get("prompt"), list)
     }
-    assert {1, 9, 25, 57, 121, 249, 8192, 9500} <= prompt_lengths
+    assert {4, 12, 28, 60, 124, 252, 8192, 9500} <= prompt_lengths
     c2_payloads = [
         payload
         for payload in completion_payloads

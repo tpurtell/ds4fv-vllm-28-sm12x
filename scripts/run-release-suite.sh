@@ -14,7 +14,7 @@ output_root=${OUTPUT_ROOT:-${script_dir}/../benchmarks/${stamp}-${role}}
 
 case "${role}" in
   native-vision)
-    dspark_tokens=${DSPARK_TOKENS:-6}
+    dspark_tokens=${DSPARK_TOKENS:-3}
     ;;
   exl3)
     dspark_tokens=${DSPARK_TOKENS:-5}

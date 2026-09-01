@@ -96,21 +96,26 @@ is retained in this repository.
   the matched 256-in/128-out C1 gate, 21.03% above the earlier probabilistic-K5
   result and 1.88% above stock adaptive K5.
 
-- **Native DSpark launch profile:** Native Vision defaults to qualified K6,
-  covering two passes through its three next-token predictor layers, while
-  native text and the one-Spark EXL3 role default to K5. Greedy drafting is the
-  speed-first default, with probabilistic drafting, target-only controls, and
-  explicit draft-depth tuning retained as overrides; the multimodal wrapper
-  carries vLLM's EAGLE3 interface so auxiliary target hidden states are
-  delegated to the underlying native DeepSeek decoder.
+- **Native DSpark launch profile:** Native Vision defaults to qualified K3,
+  covering one pass through its three next-token predictor layers, while
+  native text and the one-Spark EXL3 role default to K5. Greedy K3 sustained
+  30 complete 1/4/16-image cycles and reached matched C1/C2/C4 medians of
+  52.63/89.86/135.73 tok/s; K6 intermittently wedged repeated 16-image service
+  and was 9.6%/11.7%/7.0% slower. Explicit draft-depth, probabilistic, and
+  target-only controls remain available; the multimodal wrapper carries
+  vLLM's EAGLE3 interface so auxiliary target hidden states are delegated to
+  the underlying native DeepSeek decoder.
 
 - **Adaptive DSpark distinction:** The SM121 patch makes vLLM's stock adaptive
   verifier graph-safe for DeepSeek V4, but it remains opt-in after losing to
   fixed greedy depth on both Vision and EXL3; on EXL3 it was 4.85% lower on the
-  weighted content score. These results do not qualify or reject ds4rt's more
-  capable controller, which adds request-local online shared/per-position
-  confidence residuals and online context/row cost learning before a global
-  search over the measured jagged verification curve.
+  weighted content score. Stock adaptive trims an already-generated draft
+  prefix, so a K6 cap still executes the unreliable second predictor pass.
+  These results do not qualify or reject ds4rt's more capable controller,
+  which adds request-local online shared/per-position confidence residuals and
+  online context/row cost learning before a global search over the measured
+  jagged verification curve; avoiding the second predictor pass would require
+  making that decision before draft generation.
 
 - **Content benchmark scoring:** The retained speed suite scores seven content
   categories, with normal and `response_format` structured JSON weighted 0.5
@@ -192,6 +197,12 @@ is retained in this repository.
 - **Passed:** Source-check and minimally exercise the frozen-image benchmark
   clients without running a premature full suite; the development-only smoke
   is retained in `validation/2026-09-02-release-harness-smoke.md`.
+- **Passed:** Hold the exact image, target model, B12x paths, Vision batching,
+  and TP2 fabric constant while isolating repeated native Vision reliability.
+  Target-only and fixed greedy K3 each passed 30 complete 1/4/16-image cycles;
+  K6 wedged on a 16-image request even with synchronous CUDA launches, and K3
+  was faster at every matched decode concurrency. Evidence is retained in
+  `validation/2026-09-02-native-vision-k3-reliability.md`.
 - Freeze one committed production-candidate digest with zero post-ready JIT,
   then run the separate
   native Vision TP2 and one-Spark EXL3 release suites against that exact image.

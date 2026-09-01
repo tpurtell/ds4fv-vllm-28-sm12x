@@ -199,7 +199,7 @@ serve_model() {
         --mm-processor-cache-gb 0
         --limit-mm-per-prompt '{"image":16}'
       )
-      dspark_default_tokens=6
+      dspark_default_tokens=3
       ;;
     *)
       echo "MODEL_KIND must be 'text' or 'vision', got '${model_kind}'" >&2

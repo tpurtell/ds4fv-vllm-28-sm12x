@@ -194,10 +194,11 @@ def main() -> None:
 
     # Mia's post-ready sweep covered the exact scheduled-token buckets used by
     # DeepSeek's speculative-input preparation kernel. Do the same before the
-    # release marker. For K5/K6, scheduled_tokens + 1 + draft_tokens lands
-    # exactly on each power-of-two specialization from 8 through 256.
+    # release marker. For the qualified K3/K5 profiles, scheduled tokens plus
+    # one sampled target token and the draft depth land exactly on each
+    # power-of-two specialization from 8 through 256.
     if os.getenv("ENABLE_DSPARK", "1") == "1":
-        default_draft_tokens = 6 if args.role == "native-vision" else 5
+        default_draft_tokens = 3 if args.role == "native-vision" else 5
         raw_draft_tokens = os.getenv("DSPARK_TOKENS", "").strip()
         draft_tokens = (
             int(raw_draft_tokens) if raw_draft_tokens else default_draft_tokens

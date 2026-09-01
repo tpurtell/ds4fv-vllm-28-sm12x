@@ -13,7 +13,7 @@ or GPU code.
 
 | Role | Topology | DSpark | Prefix cache | Vision limit |
 | --- | --- | --- | --- | --- |
-| `native-vision` | two SM121 Sparks, TP2, merged dual rail | fixed greedy K6 | off | 16 images |
+| `native-vision` | two SM121 Sparks, TP2, merged dual rail | fixed greedy K3 | off | 16 images |
 | `exl3` | one SM121 Spark, mixed K2/K3 | fixed greedy K5 | on | n/a |
 
 Both profiles use FP8 KV cache, a maximum length of 131,072, four scheduler

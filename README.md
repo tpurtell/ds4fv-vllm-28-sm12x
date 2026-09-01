@@ -85,9 +85,11 @@ cross-NIC policies remain environment overrides, but the defaults are now
 qualified: merged dual rail with `NCCL_CROSS_NIC=2` was 4.84% faster than one
 HCA on the matched native text TP2 prefill run.
 
-Native DSpark is enabled by default. Vision uses the qualified K6 depth (two
-passes through its three next-token predictor layers), while native text
-defaults to K5. Drafting is greedy by default; use
+Native DSpark is enabled by default. Vision uses the qualified K3 depth (one
+pass through its three next-token predictor layers), while native text
+defaults to K5. K6's second predictor pass is not enabled by default because
+it both reduced matched decode throughput and intermittently wedged repeated
+16-image service. Drafting is greedy by default; use
 `DRAFT_SAMPLE_METHOD=probabilistic` for stochastic drafting,
 `DSPARK_TOKENS=<n>` for an explicitly qualified depth, or `ENABLE_DSPARK=0`
 for a target-only control. Regular CUDA graphs are retained and the slower
