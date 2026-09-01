@@ -48,6 +48,26 @@ def main() -> None:
         "--limit-mm-per-prompt '{\"image\":16}'",
     ):
         assert fragment in launcher
+    for fragment in (
+        "run_vllm_with_warmup \"native-${model_kind}\"",
+        "run_vllm_with_warmup exl3",
+        "/tmp/ds4fv-release-ready",
+        "DS4FV_STARTUP_WARMUP",
+        "DS4FV release startup warmup complete; container is ready.",
+    ):
+        assert fragment in launcher
+
+    warmup = (ROOT / "scripts/release-warmup.py").read_text()
+    for fragment in (
+        'choices=("native-text", "native-vision", "exl3")',
+        "for block_size in (8, 16, 32, 64, 128, 256)",
+        "args.base_url, model, 9500, args.request_timeout",
+        "image_counts = (1, 4, 16)",
+        '"structured output"',
+        '"tool parser"',
+        '"n": 4',
+    ):
+        assert fragment in warmup
 
     runner = (ROOT / "scripts/run-release-suite.sh").read_text()
     for script in (
@@ -66,6 +86,26 @@ def main() -> None:
 
     dockerfile = (ROOT / "Dockerfile").read_text()
     assert 'org.opencontainers.image.revision="${RECIPE_COMMIT}"' in dockerfile
+    assert "scripts/release-warmup.py /opt/ds4fv/bin/release-warmup" in dockerfile
+    assert "scripts/container-healthcheck.py" in dockerfile
+    assert "TILELANG_CACHE_DIR=/cache/huggingface/tilelang-cache" in dockerfile
+    assert "TRITON_CACHE_DIR=/cache/huggingface/triton-cache" in dockerfile
+    assert "--start-period=60m" in dockerfile
+
+    for name in ("launch-two-spark.sh", "launch-one-spark-exl3.sh"):
+        host_launcher = (ROOT / "scripts" / name).read_text()
+        for fragment in (
+            "DS4FV_STARTUP_WARMUP",
+            "DS4FV_ENGINE_READY_TIMEOUT_S",
+            "DS4FV_STARTUP_WARMUP_TIMEOUT_S",
+            "TILELANG_CACHE_DIR",
+            "TRITON_CACHE_DIR",
+        ):
+            assert fragment in host_launcher
+
+    audit = (ROOT / "scripts/audit-startup-jit.py").read_text()
+    assert "ds4fv-release-startup-jit-audit.v1" in audit
+    assert '"passed": not post_ready_jit' in audit
     print("release harness source smoke passed")
 
 

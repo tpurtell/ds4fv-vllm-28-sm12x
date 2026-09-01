@@ -87,6 +87,9 @@ common_args=(
   -e CUTE_DSL_ARCH=sm_121a
   -e TORCH_CUDA_ARCH_LIST=12.1a
   -e B12X_COMPILE_CACHE_DIR=/cache/huggingface/b12x-compile-cache
+  -e TILELANG_CACHE_DIR="${TILELANG_CACHE_DIR:-/cache/huggingface/tilelang-cache}"
+  -e TRITON_CACHE_DIR="${TRITON_CACHE_DIR:-/cache/huggingface/triton-cache}"
+  -e VLLM_CACHE_ROOT="${VLLM_CACHE_ROOT:-/cache/huggingface/vllm-cache}"
   -e DS4FV_USE_B12X_COMPRESSED_MLA="${DS4FV_USE_B12X_COMPRESSED_MLA:-0}"
   -e MAX_MODEL_LEN="${MAX_MODEL_LEN:-131072}"
   -e MAX_NUM_SEQS="${MAX_NUM_SEQS:-4}"
@@ -98,6 +101,10 @@ common_args=(
   -e DSPARK_TOKENS="${DSPARK_TOKENS:-}"
   -e DRAFT_SAMPLE_METHOD="${DRAFT_SAMPLE_METHOD:-greedy}"
   -e DSPARK_ADAPTIVE_VERIFICATION="${DSPARK_ADAPTIVE_VERIFICATION:-0}"
+  -e DS4FV_STARTUP_WARMUP="${DS4FV_STARTUP_WARMUP:-1}"
+  -e DS4FV_ENGINE_READY_TIMEOUT_S="${DS4FV_ENGINE_READY_TIMEOUT_S:-3600}"
+  -e DS4FV_STARTUP_WARMUP_TIMEOUT_S="${DS4FV_STARTUP_WARMUP_TIMEOUT_S:-1800}"
+  -e VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS="${VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS:-1800}"
   -e CUDA_LAUNCH_BLOCKING="${CUDA_LAUNCH_BLOCKING:-0}"
   -e VLLM_USE_BREAKABLE_CUDAGRAPH="${VLLM_USE_BREAKABLE_CUDAGRAPH:-0}"
   -e NCCL_IB_DISABLE=0
@@ -142,4 +149,5 @@ remote "${worker_host}" docker run -d \
   "${image}" >/dev/null
 
 echo "Started ${head_host}/${head_name} and ${worker_host}/${worker_name}."
+echo "Health stays starting until release warmup finishes."
 echo "Follow startup: ssh ${head_host} docker logs -f ${head_name}"

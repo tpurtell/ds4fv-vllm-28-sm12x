@@ -33,6 +33,7 @@ ray_python=(python3 -m ray.scripts.scripts)
 ray_head_ip=${RAY_HEAD_IP:-${VLLM_HOST_IP:-}}
 ray_port=${RAY_PORT:-6379}
 world_size=${DS4FV_WORLD_SIZE:-2}
+ready_file=/tmp/ds4fv-release-ready
 
 require_value() {
   local name=$1 value=${!1:-}
@@ -87,6 +88,56 @@ configure_dspark_args() {
       exit 64
       ;;
   esac
+}
+
+run_vllm_with_warmup() {
+  local warmup_role=$1
+  shift
+  local server_pid warmup_status server_status
+
+  rm -f "${ready_file}"
+  "$@" &
+  server_pid=$!
+
+  forward_term() {
+    kill -TERM "${server_pid}" 2>/dev/null || true
+  }
+  trap forward_term TERM INT
+
+  case "${DS4FV_STARTUP_WARMUP:-1}" in
+    1)
+      set +e
+      python3 /opt/ds4fv/bin/release-warmup \
+        --server-pid "${server_pid}" \
+        --base-url "http://127.0.0.1:${API_PORT:-8000}" \
+        --role "${warmup_role}"
+      warmup_status=$?
+      set -e
+      if [[ ${warmup_status} -ne 0 ]]; then
+        printf 'DS4FV release startup warmup failed with status %s\n' \
+          "${warmup_status}" >&2
+        forward_term
+        wait "${server_pid}" 2>/dev/null || true
+        exit "${warmup_status}"
+      fi
+      ;;
+    0) ;;
+    *)
+      echo "DS4FV_STARTUP_WARMUP must be 0 or 1" >&2
+      forward_term
+      wait "${server_pid}" 2>/dev/null || true
+      exit 2
+      ;;
+  esac
+
+  touch "${ready_file}"
+  printf 'DS4FV release startup warmup complete; container is ready.\n'
+
+  set +e
+  wait "${server_pid}"
+  server_status=$?
+  set -e
+  exit "${server_status}"
 }
 
 start_ray_head() {
@@ -182,7 +233,7 @@ serve_model() {
   fi
   configure_dspark_args speculative_args "${dspark_default_tokens}"
 
-  exec vllm serve "${model_args[@]}" \
+  run_vllm_with_warmup "native-${model_kind}" vllm serve "${model_args[@]}" \
     --served-model-name "${served_name}" \
     --host "${API_HOST:-0.0.0.0}" \
     --port "${API_PORT:-8000}" \
@@ -228,7 +279,7 @@ serve_exl3() {
   fi
   configure_dspark_args speculative_args
 
-  exec vllm serve "${model_ref}" \
+  run_vllm_with_warmup exl3 vllm serve "${model_ref}" \
     "${revision_args[@]}" \
     --served-model-name "${served_name}" \
     --host "${API_HOST:-0.0.0.0}" \

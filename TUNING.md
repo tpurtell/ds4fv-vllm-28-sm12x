@@ -119,6 +119,12 @@ is retained in this repository.
   cold 8K--128K prefill, semantic content, 128K retrieval, prefix/Vision, and
   C4 soak receipts; structured normal and constrained arms retain half weight.
 
+- **Release-ready kernel warmup:** Docker health is gated on successful real
+  requests covering DSpark's exact 8--256 scheduling buckets, rendered greedy
+  C1/C2/C4, chunk-crossing prefill, structured/tool parsing, and the Vision
+  1/4/16-image shapes. Triton and TileLang caches now persist beside the B12x
+  and FlashInfer caches so a container recreate does not rediscover known JITs.
+
 - **Native Vision TP2 baseline:** The full 48-shard model now starts on two
   SM121 Sparks and serves image-sensitive requests. A standardized warm
   8,192-input/1-output, concurrency-one serving run produced 2,187.25 total
@@ -176,5 +182,6 @@ is retained in this repository.
 - **Passed:** Source-check and minimally exercise the frozen-image benchmark
   clients without running a premature full suite; the development-only smoke
   is retained in `validation/2026-09-02-release-harness-smoke.md`.
-- Freeze one committed production-candidate digest, then run the separate
+- Freeze one committed production-candidate digest with zero post-ready JIT,
+  then run the separate
   native Vision TP2 and one-Spark EXL3 release suites against that exact image.

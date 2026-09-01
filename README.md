@@ -105,6 +105,14 @@ Both serving roles expose DeepSeek V4's native tokenizer, reasoning parser,
 and automatic tool parser. The release suite includes a deterministic tool-call
 contract so these API paths cannot silently regress while kernel work changes.
 
+Docker health is deliberately stricter than vLLM's internal `/health`: the
+container remains unready until real requests have exercised DSpark's exact
+shape buckets, rendered greedy C1/C2/C4, chunk-crossing prefill,
+structured/tool parsing, and (for Vision) 1/4/16-image paths. Set
+`DS4FV_STARTUP_WARMUP=0` only for development diagnostics; such a run is not a
+release candidate. Triton, TileLang, B12x, and FlashInfer JIT caches persist on
+the mounted Hugging Face cache volume.
+
 ## One-Spark EXL3 launch
 
 The mixed K2/K3 EXL3 checkpoint fits on one Spark and uses the same image:

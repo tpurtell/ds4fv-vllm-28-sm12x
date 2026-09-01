@@ -89,8 +89,10 @@ RUN echo "209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c  ${VL
        /tmp/apply-flashinfer-dspark-sm121.py
 
 COPY scripts/start-native.sh /opt/ds4fv/bin/start-native
+COPY scripts/release-warmup.py /opt/ds4fv/bin/release-warmup
+COPY scripts/container-healthcheck.py /opt/ds4fv/bin/container-healthcheck.py
 COPY tests/spark_exl3_no_gpu_smoke.py /opt/ds4fv/tests/spark_exl3_no_gpu_smoke.py
-RUN chmod 0755 /opt/ds4fv/bin/start-native
+RUN chmod 0755 /opt/ds4fv/bin/start-native /opt/ds4fv/bin/release-warmup
 
 ENV PYTHONPATH=/opt/b12x:/usr/local/lib/python3.12/dist-packages \
     PYTHONUNBUFFERED=1 \
@@ -98,9 +100,16 @@ ENV PYTHONPATH=/opt/b12x:/usr/local/lib/python3.12/dist-packages \
     CUDA_MODULE_LOADING=LAZY \
     CUTE_DSL_ARCH=sm_121a \
     FLASHINFER_WORKSPACE_BASE=/cache/huggingface/vllm-cache/flashinfer-workspace \
+    TILELANG_CACHE_DIR=/cache/huggingface/tilelang-cache \
+    TRITON_CACHE_DIR=/cache/huggingface/triton-cache \
+    VLLM_CACHE_ROOT=/cache/huggingface/vllm-cache \
+    VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS=1800 \
     VLLM_USE_BREAKABLE_CUDAGRAPH=0 \
     VLLM_WORKER_MULTIPROC_METHOD=spawn
 
 WORKDIR /workspace
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=60m --retries=3 \
+  CMD ["python3", "/opt/ds4fv/bin/container-healthcheck.py"]
 
 ENTRYPOINT ["/opt/ds4fv/bin/start-native"]

@@ -70,6 +70,13 @@ ranks, including model memory, KV capacity, graph capture, and any runtime
 compilation; a release cannot claim post-ready JIT-free operation unless the
 logs actually establish it.
 
+The service container is not ready merely because vLLM's internal `/health`
+endpoint responds. Docker health remains gated on the entrypoint's exact
+`DS4FV release startup warmup complete; container is ready.` marker after the
+real-path shape sweep succeeds. Run `scripts/audit-startup-jit.py` on the Spark
+after a post-ready diagnostic and again after the suite; `post_ready_jit_count`
+must remain zero.
+
 The release gate is zero request failures, every semantic/tool/Vision/long-
 context contract passing, a healthy completed soak, and no newly compiled
 runtime shape after readiness. Performance must also exceed the corresponding
