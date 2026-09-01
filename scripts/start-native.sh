@@ -22,7 +22,7 @@ PY
 role=${DS4FV_ROLE:-head}
 if [[ $# -gt 0 ]]; then
   case "$1" in
-    head|ray-head|ray-worker|worker|serve)
+    head|ray-head|ray-worker|worker|serve|exl3)
       role=$1
       shift
       ;;
@@ -159,6 +159,69 @@ serve_model() {
     "$@"
 }
 
+serve_exl3() {
+  local model_repo model_revision served_name model_ref draft_sample_method
+  local -a revision_args=() prefix_args=() speculative_args=()
+  model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2.1-D2.2-calibrated-v3}
+  model_revision=${MODEL_REVISION:-7827301eed170e2a5e394f45a13cc66561c601ed}
+  served_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-0731-exl3-k2.1-d2.2-v3}
+
+  if [[ -n "${MODEL_PATH:-}" ]]; then
+    model_ref=${MODEL_PATH}
+  else
+    model_ref=${model_repo}
+    revision_args=(--revision "${model_revision}")
+  fi
+  if [[ "${ENABLE_PREFIX_CACHING:-1}" == 1 ]]; then
+    prefix_args=(--enable-prefix-caching)
+  else
+    prefix_args=(--no-enable-prefix-caching)
+  fi
+  case "${ENABLE_DSPARK:-1}" in
+    0) ;;
+    1)
+      draft_sample_method=${DRAFT_SAMPLE_METHOD:-probabilistic}
+      case "${draft_sample_method}" in
+        probabilistic|greedy) ;;
+        *)
+          echo "DRAFT_SAMPLE_METHOD must be probabilistic or greedy" >&2
+          exit 64
+          ;;
+      esac
+      speculative_args=(
+        --speculative-config
+        "{\"method\":\"dspark\",\"num_speculative_tokens\":${DSPARK_TOKENS:-5},\"draft_sample_method\":\"${draft_sample_method}\"}"
+      )
+      ;;
+    *)
+      echo "ENABLE_DSPARK must be 0 or 1" >&2
+      exit 64
+      ;;
+  esac
+
+  exec vllm serve "${model_ref}" \
+    "${revision_args[@]}" \
+    --served-model-name "${served_name}" \
+    --host "${API_HOST:-0.0.0.0}" \
+    --port "${API_PORT:-8000}" \
+    --quantization exl3 \
+    --load-format "${LOAD_FORMAT:-instanttensor}" \
+    --distributed-executor-backend "${DISTRIBUTED_EXECUTOR_BACKEND:-uni}" \
+    --tensor-parallel-size 1 \
+    --pipeline-parallel-size 1 \
+    --moe-backend b12x \
+    --linear-backend b12x \
+    --max-model-len "${MAX_MODEL_LEN:-131072}" \
+    --max-num-seqs "${MAX_NUM_SEQS:-4}" \
+    --max-num-batched-tokens "${MAX_NUM_BATCHED_TOKENS:-8192}" \
+    --gpu-memory-utilization "${GPU_MEMORY_UTILIZATION:-0.85}" \
+    --kv-cache-dtype "${KV_CACHE_DTYPE:-fp8}" \
+    --enable-chunked-prefill \
+    "${prefix_args[@]}" \
+    "${speculative_args[@]}" \
+    "$@"
+}
+
 case "${role}" in
   head)
     start_ray_head
@@ -181,8 +244,11 @@ case "${role}" in
     wait_for_ray_gpus
     serve_model "$@"
     ;;
+  exl3)
+    serve_exl3 "$@"
+    ;;
   *)
-    echo "Unknown DS4FV role '${role}'; expected head, ray-head, worker, or serve" >&2
+    echo "Unknown DS4FV role '${role}'; expected head, ray-head, worker, serve, or exl3" >&2
     exit 64
     ;;
 esac

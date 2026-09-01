@@ -16,7 +16,7 @@ is retained in this repository.
 
 - **Current B12x:** `tpurtell/sparkinfer-glmrt` was merged with upstream B12x
   through `139e0404`, tested on a Spark without initializing CUDA, and pinned at
-  `a1367713`. Kernel paths will be enabled individually only after model-shape
+  `08e15b4e`. Kernel paths will be enabled individually only after model-shape
   qualification; installing B12x does not imply every projection uses it.
 
 - **Native MXFP4 MoE port:** The newer B12x TP and replicated-input EP adapters
@@ -64,11 +64,20 @@ is retained in this repository.
   2,131.70 tok/s for `rocep1s0f0` alone: a 4.84% gain and 4.62% lower mean
   TTFT. The two-HCA profile is now the qualified default.
 
-- **Mixed EXL3 Trellis:** The roughly 1300-to-800 prefill regression seen with
-  mixed K2/K3 layers in the Mia image is not an acceptable baseline. Current
-  B12x already carries ds4rt's projection-mixed direct small-M routing; the
-  vLLM binding must preserve it, and mixed prefill must remain within 5% of an
-  equal-work uniform-K2 run before becoming the default.
+- **Mixed EXL3 Trellis:** Large packed route blocks had forced FC2 through
+  grouped M8 subtiles; the whole-tile scheduler now keeps K64/N256 and uses
+  native M32/M64 FC2 with a resource-driven M8 fallback. On GB10 at the exact
+  8192x4096x2048, E256/top-6 geometry, mixed K2/K3 measured 47.095 ms versus
+  45.293 ms uniform K2 (+3.98%); matched one-Spark 8K prefill measured
+  1,284.72 tok/s versus 1,334.90 tok/s uniform K2 (-3.76%), passing both 5%
+  gates.
+
+- **Native DSpark on EXL3:** Draft depth five widens DeepSeek V4's SWA route
+  from 128 to 192 entries, so the image adds FlashInfer's legal three-chunk
+  SM121 DSV4 instantiations and uses a versioned JIT module instead of the
+  package's stale unadapted AOT binary. Matched 256-in/128-out C1 qualification
+  improved output throughput from 19.03 to 28.58 tok/s (+50.17%) at 41.24%
+  accepted draft tokens.
 
 - **Native Vision TP2 baseline:** The full 48-shard model now starts on two
   SM121 Sparks and serves image-sensitive requests. A standardized warm
@@ -108,7 +117,14 @@ is retained in this repository.
   on semantic image fixtures.
 - Extend reliability evidence beyond the retained concurrency-four stress
   point and exercise recovery from a worker or fabric interruption.
-- Add the one-Spark EXL3 profile only after the calibrated v3 checkpoint is
-  complete; compare mixed K2/K3 against uniform K2 with identical prompts,
-  batch/concurrency, draft depth, and cache state, accepting at most 5% prefill
-  loss.
+- **Passed:** Qualify one-grid mixed K2/K3 against uniform K2 at production
+  geometry; the selected K64/N256 kernel is 3.98% slower and stays below the
+  5% microbenchmark gate.
+- **Passed:** The matched one-Spark EXL3 full-model comparison held prompts,
+  concurrency, cache state, and target-only execution constant; mixed K2/K3
+  was 3.76% below uniform K2 and passed the 5% prefill gate.
+- **Passed:** Native DSpark K5 starts on the mixed EXL3 model and improves the
+  matched C1 output throughput by 50.17% over target-only decode. Evidence is
+  retained in `validation/2026-09-01-spark-exl3-qualification.md`.
+- Freeze one committed production-candidate digest, then run the separate
+  native Vision TP2 and one-Spark EXL3 release suites against that exact image.

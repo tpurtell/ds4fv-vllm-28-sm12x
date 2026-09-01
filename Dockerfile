@@ -1,13 +1,16 @@
 # syntax=docker/dockerfile:1.7
 
+ARG EXL3_SOURCE_IMAGE=ghcr.io/tpurtell/deepseek-v4-flash-0731-exl3-k2-spark@sha256:bf383b32a03bdcfef19e42b52778df413c0c47d07c3f4d4e66c78002d17beb74
 ARG VLLM_BASE_IMAGE=vllm/vllm-openai@sha256:2a7cde230b59f3ce6cab33dd245ba6bee41aa87b38c9fe84f966ff24016813ce
+FROM ${EXL3_SOURCE_IMAGE} AS exl3_source
 FROM --platform=linux/arm64 ${VLLM_BASE_IMAGE}
 
 ARG B12X_REPOSITORY=https://github.com/tpurtell/sparkinfer-glmrt
-ARG B12X_COMMIT=a13677130cd144772bc7528238fe2244bbe3d0d4
+ARG B12X_COMMIT=08e15b4e3467ac56fc9eab3500c11356c6068846
 ARG B12X_VLLM_ADAPTER_COMMIT=30038602b71395f481ef4a6edfe4fcf8551d9c15
 ARG B12X_VLLM_ADAPTER_BASE=https://raw.githubusercontent.com/local-inference-lab/vllm/30038602b71395f481ef4a6edfe4fcf8551d9c15
 ARG RAY_VERSION=2.48.0
+ARG INSTANTTENSOR_VERSION=0.1.9
 ARG VLLM_SITE_PACKAGES=/usr/local/lib/python3.12/dist-packages
 
 LABEL org.opencontainers.image.title="DeepSeek V4 Flash/Vision for DGX Spark" \
@@ -16,8 +19,9 @@ LABEL org.opencontainers.image.title="DeepSeek V4 Flash/Vision for DGX Spark" \
       org.opencontainers.image.base.digest="sha256:2a7cde230b59f3ce6cab33dd245ba6bee41aa87b38c9fe84f966ff24016813ce" \
       io.tpurtell.target.arch="linux/arm64" \
       io.tpurtell.target.cuda.arch="sm_121a" \
-      io.tpurtell.b12x.commit="a13677130cd144772bc7528238fe2244bbe3d0d4" \
+      io.tpurtell.b12x.commit="08e15b4e3467ac56fc9eab3500c11356c6068846" \
       io.tpurtell.b12x.vllm-adapter.commit="${B12X_VLLM_ADAPTER_COMMIT}" \
+      io.tpurtell.exl3.source.sha256="209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c" \
       io.tpurtell.ray.version="${RAY_VERSION}"
 
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
@@ -27,6 +31,8 @@ SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 # serving Spark at runtime.
 RUN test "$(uname -m)" = "aarch64"
 RUN python3 -m pip install --no-cache-dir "ray[default]==${RAY_VERSION}"
+RUN python3 -m pip install --no-cache-dir --no-deps \
+      "instanttensor==${INSTANTTENSOR_VERSION}"
 RUN B12X_REPOSITORY="${B12X_REPOSITORY}" B12X_COMMIT="${B12X_COMMIT}" \
     python3 - <<'PY'
 import os
@@ -52,16 +58,31 @@ RUN python3 -m pip install --no-cache-dir --no-deps -e /opt/b12x
 
 COPY patches/apply-vllm-b12x.py /tmp/apply-vllm-b12x.py
 COPY patches/apply-vllm-vision.py /tmp/apply-vllm-vision.py
+COPY patches/apply-vllm-exl3.py /tmp/apply-vllm-exl3.py
+COPY patches/apply-flashinfer-dspark-sm121.py \
+     /tmp/apply-flashinfer-dspark-sm121.py
+COPY --from=exl3_source \
+    /opt/vllm/vllm/model_executor/layers/quantization/exl3.py \
+    ${VLLM_SITE_PACKAGES}/vllm/model_executor/layers/quantization/exl3.py
 COPY overlay/vllm/model_executor/models/deepseek_v4_vision.py \
      ${VLLM_SITE_PACKAGES}/vllm/model_executor/models/deepseek_v4_vision.py
-RUN python3 /tmp/apply-vllm-b12x.py "${VLLM_SITE_PACKAGES}/vllm" \
+RUN echo "209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c  ${VLLM_SITE_PACKAGES}/vllm/model_executor/layers/quantization/exl3.py" \
+      | sha256sum --check --strict \
+ && python3 /tmp/apply-flashinfer-dspark-sm121.py "${VLLM_SITE_PACKAGES}" \
+ && python3 /tmp/apply-vllm-b12x.py "${VLLM_SITE_PACKAGES}/vllm" \
       --b12x-root /opt/b12x/b12x \
       --source-base "${B12X_VLLM_ADAPTER_BASE}" \
  && python3 /tmp/apply-vllm-vision.py "${VLLM_SITE_PACKAGES}/vllm" \
+ && python3 /tmp/apply-vllm-exl3.py "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 -m compileall -q "${VLLM_SITE_PACKAGES}/vllm" \
- && rm /tmp/apply-vllm-b12x.py /tmp/apply-vllm-vision.py
+ && python3 -m py_compile \
+      "${VLLM_SITE_PACKAGES}/flashinfer/mla/_sparse_mla_sm120.py" \
+      "${VLLM_SITE_PACKAGES}/flashinfer/jit/mla.py" \
+ && rm /tmp/apply-vllm-b12x.py /tmp/apply-vllm-vision.py \
+       /tmp/apply-vllm-exl3.py /tmp/apply-flashinfer-dspark-sm121.py
 
 COPY scripts/start-native.sh /opt/ds4fv/bin/start-native
+COPY tests/spark_exl3_no_gpu_smoke.py /opt/ds4fv/tests/spark_exl3_no_gpu_smoke.py
 RUN chmod 0755 /opt/ds4fv/bin/start-native
 
 ENV PYTHONPATH=/opt/b12x:/usr/local/lib/python3.12/dist-packages \
@@ -69,6 +90,7 @@ ENV PYTHONPATH=/opt/b12x:/usr/local/lib/python3.12/dist-packages \
     PYTHONDONTWRITEBYTECODE=1 \
     CUDA_MODULE_LOADING=LAZY \
     CUTE_DSL_ARCH=sm_121a \
+    FLASHINFER_WORKSPACE_BASE=/cache/huggingface/vllm-cache/flashinfer-workspace \
     VLLM_WORKER_MULTIPROC_METHOD=spawn
 
 WORKDIR /workspace
