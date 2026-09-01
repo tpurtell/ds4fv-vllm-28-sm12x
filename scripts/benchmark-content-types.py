@@ -177,12 +177,6 @@ def stream_completion(
     first = first or finished
     completion_tokens = int(usage["completion_tokens"])
     decode_seconds = max(0.001, finished - first)
-    orchid_summary = arm_summaries.get("orchid")
-    orchid_contract_passed = (
-        orchid_summary is None
-        or int(orchid_summary["valid_repetitions"])
-        == int(orchid_summary["samples"])
-    )
     return {
         "prompt_tokens": int(usage["prompt_tokens"]),
         "completion_tokens": completion_tokens,
@@ -383,6 +377,12 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
         for record in records
         if record["timed"] and record["arm"] != "orchid"
     ]
+    orchid_summary = arm_summaries.get("orchid")
+    orchid_contract_passed = (
+        orchid_summary is None
+        or int(orchid_summary["valid_repetitions"])
+        == int(orchid_summary["samples"])
+    )
     return {
         "arms": arm_summaries,
         "weighted_content_score_tok_s": weighted_score,

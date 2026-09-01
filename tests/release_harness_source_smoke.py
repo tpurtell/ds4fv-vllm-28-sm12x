@@ -38,6 +38,31 @@ def main() -> None:
         passed, issues = content.validate_semantic_contract(arm_id, valid_json)
         assert passed, issues
     assert not content.validate_semantic_contract("topic", "- Paging only.")[0]
+    summary = content.summarize(
+        [
+            {
+                "timed": True,
+                "arm": "code",
+                "category": "code",
+                "score_weight": 1.0,
+                "decode_tok_s": 50.0,
+                "completion_tokens": 32,
+                "quality_contract_passed": True,
+            },
+            {
+                "timed": True,
+                "arm": "orchid",
+                "category": "low-entropy-showcase",
+                "score_weight": 1.0,
+                "decode_tok_s": 65.0,
+                "completion_tokens": 128,
+                "orchid_only": True,
+                "orchid_minimum_reached": True,
+            },
+        ]
+    )
+    assert summary["quality_contract_passed"]
+    assert summary["orchid_contract_passed"]
 
     launcher = (ROOT / "scripts/start-native.sh").read_text()
     for fragment in (
