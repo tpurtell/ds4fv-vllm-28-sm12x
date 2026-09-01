@@ -95,7 +95,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model", required=True)
     parser.add_argument("--repeats", type=int, default=5)
     parser.add_argument("--orchid-warmups", type=int, default=1)
-    parser.add_argument("--orchid-count", type=int, default=100)
+    parser.add_argument(
+        "--orchid-count",
+        type=int,
+        default=100,
+        help="Minimum repeated words required for a valid Orchid speed sample.",
+    )
     parser.add_argument("--orchid-max-tokens", type=int, default=1500)
     parser.add_argument("--skip-orchid", action="store_true")
     parser.add_argument("--timeout", type=float, default=600.0)
@@ -209,9 +214,11 @@ def compact_record(
     if arm.category == "structured-output":
         record["structured_contract_passed"] = structured_passed(content)
     if arm_id == "orchid":
-        occurrences = len(re.findall(r"\borchid\b", content, re.IGNORECASE))
+        words = re.findall(r"\b[A-Za-z]+\b", content)
+        occurrences = sum(word.lower() == "orchid" for word in words)
         record["observed_orchid_count"] = occurrences
-        record["exact_orchid_count"] = occurrences == int(raw["requested_count"])
+        record["orchid_only"] = bool(words) and occurrences == len(words)
+        record["orchid_minimum_reached"] = occurrences >= int(raw["minimum_count"])
     return record
 
 
@@ -237,8 +244,9 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
                 bool(sample["structured_contract_passed"]) for sample in samples
             )
         if arm_id == "orchid":
-            summary["exact_repetitions"] = sum(
-                bool(sample["exact_orchid_count"]) for sample in samples
+            summary["valid_repetitions"] = sum(
+                bool(sample["orchid_only"] and sample["orchid_minimum_reached"])
+                for sample in samples
             )
         arm_summaries[arm_id] = summary
 
@@ -259,7 +267,7 @@ def main() -> None:
     args = parse_args()
     run_id = args.run_id or f"run-{time.time_ns()}"
     report: dict[str, Any] = {
-        "schema": "ds4fv-content-types-v1",
+        "schema": "ds4fv-content-types-v2",
         "run_id": run_id,
         "base_url": args.base_url,
         "model": args.model,
@@ -303,9 +311,9 @@ def main() -> None:
         orchid = PromptArm("low-entropy-showcase", "", args.orchid_max_tokens)
         for sample in range(args.orchid_warmups + args.repeats):
             prompt = (
-                f"orchid {run_id}-orchid-{sample}\n"
-                f'Repeat only the single word "orchid" exactly {args.orchid_count} '
-                "times, separated by spaces. Do not repeat the nonce or add any other text."
+                'Output only the single word "orchid" repeatedly, separated by '
+                "single spaces. Continue until the output token limit and do not "
+                "add punctuation or any other text."
             )
             raw = stream_completion(
                 base_url=args.base_url,
@@ -314,7 +322,7 @@ def main() -> None:
                 max_tokens=args.orchid_max_tokens,
                 timeout=args.timeout,
             )
-            raw["requested_count"] = args.orchid_count
+            raw["minimum_count"] = args.orchid_count
             record = compact_record(
                 arm_id="orchid",
                 arm=orchid,

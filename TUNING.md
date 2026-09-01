@@ -82,9 +82,9 @@ is retained in this repository.
 - **Native DSpark on EXL3:** Draft depth five widens DeepSeek V4's SWA route
   from 128 to 192 entries, so the image adds FlashInfer's legal three-chunk
   SM121 DSV4 instantiations and uses a versioned JIT module instead of the
-  package's stale unadapted AOT binary. Matched 256-in/128-out C1 qualification
-  improved output throughput from 19.03 to 28.58 tok/s (+50.17%) at 41.24%
-  accepted draft tokens.
+  package's stale unadapted AOT binary. Fixed greedy K5 reached 34.59 tok/s on
+  the matched 256-in/128-out C1 gate, 21.03% above the earlier probabilistic-K5
+  result and 1.88% above stock adaptive K5.
 
 - **Native DSpark launch profile:** Native Vision defaults to qualified K6,
   covering two passes through its three next-token predictor layers, while
@@ -95,11 +95,19 @@ is retained in this repository.
   delegated to the underlying native DeepSeek decoder.
 
 - **Adaptive DSpark distinction:** The SM121 patch makes vLLM's stock adaptive
-  verifier graph-safe for DeepSeek V4, but its matched Vision content score was
-  below fixed greedy K6, so it remains opt-in. That result does not qualify or
-  reject ds4rt's more capable controller, which adds request-local online
-  shared/per-position confidence residuals and online context/row cost learning
-  before a global search over the measured jagged verification curve.
+  verifier graph-safe for DeepSeek V4, but it remains opt-in after losing to
+  fixed greedy depth on both Vision and EXL3; on EXL3 it was 4.85% lower on the
+  weighted content score. These results do not qualify or reject ds4rt's more
+  capable controller, which adds request-local online shared/per-position
+  confidence residuals and online context/row cost learning before a global
+  search over the measured jagged verification curve.
+
+- **Content benchmark scoring:** The retained speed suite scores seven content
+  categories, with normal and `response_format` structured JSON weighted 0.5
+  each so constrained decoding cannot double-count the category. Orchid is a
+  separate maximum-speed arm; schema v2 asks for a pure continuous stream to
+  the output limit and validates purity/minimum repetitions instead of an exact
+  early stop.
 
 - **Native Vision TP2 baseline:** The full 48-shard model now starts on two
   SM121 Sparks and serves image-sensitive requests. A standardized warm
@@ -146,8 +154,11 @@ is retained in this repository.
   concurrency, cache state, and target-only execution constant; mixed K2/K3
   was 3.76% below uniform K2 and passed the 5% prefill gate.
 - **Passed:** Native DSpark K5 starts on the mixed EXL3 model and improves the
-  matched C1 output throughput by 50.17% over target-only decode. Evidence is
-  retained in `validation/2026-09-01-spark-exl3-qualification.md`.
+  earlier matched C1 output throughput by 50.17% over target-only decode; the
+  newly qualified greedy default raises that result another 21.03% to 34.59
+  tok/s. Fixed K5 also beat stock adaptive by 1.88% on random decode and 4.85%
+  on the weighted content suite; evidence is retained in
+  `validation/2026-09-02-exl3-greedy-adaptive.md`.
 - **Passed:** Prove the shared B12x compressed-MLA adapter enters the real
   Vision hot path, then retain it as opt-in because its 19.0%-faster isolated
   kernel was 1.62% slower on the matched full-model content score. Evidence is

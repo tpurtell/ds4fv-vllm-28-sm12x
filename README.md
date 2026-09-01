@@ -111,7 +111,11 @@ scripts/launch-one-spark-exl3.sh
 ```
 
 Its default is native DSpark K5 with greedy drafting. The target-only and
-explicit tuning controls above apply to this launcher as well.
+explicit tuning controls above apply to this launcher as well. On the matched
+one-Spark 256-input/128-output gate this profile reached 34.59 tok/s, 21.03%
+above the older probabilistic-K5 result and 1.88% above vLLM's stock adaptive
+K5; the [matched content qualification](validation/2026-09-02-exl3-greedy-adaptive.md)
+also favored fixed K5 by 4.85%.
 
 ## Status
 
