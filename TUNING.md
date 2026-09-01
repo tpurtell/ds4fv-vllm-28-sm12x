@@ -16,7 +16,7 @@ is retained in this repository.
 
 - **Current B12x:** `tpurtell/sparkinfer-glmrt` was merged with upstream B12x
   through `139e0404`, tested on a Spark without initializing CUDA, and pinned at
-  `08e15b4e`. Kernel paths will be enabled individually only after model-shape
+  `1713e2ac`. Kernel paths will be enabled individually only after model-shape
   qualification; installing B12x does not imply every projection uses it.
 
 - **Native MXFP4 MoE port:** The newer B12x TP and replicated-input EP adapters
@@ -53,6 +53,13 @@ is retained in this repository.
   `(16, 64)` for M1 and `(16, 128)` for M2..8 to preserve the packed WO-B
   layout.
 
+- **Compressed sparse MLA decode:** A shared-workspace adapter now exposes
+  B12x's exact SWA-plus-compressed single-softmax kernel on the real Vision
+  decode hot path. It was 19.0% faster in the weighted exact kernel microbench,
+  but `DS4FV_USE_B12X_COMPRESSED_MLA=1` reduced the matched full content score
+  from 49.027 to 48.235 tok/s (-1.62%); the adapter remains opt-in while the
+  qualified default uses vLLM's split path.
+
 - **Vision sentinel validation:** The checkpoint's five image sentinel IDs
   sit immediately above the text vocabulary. Only multimodal requests for the
   exact Vision architecture receive the wider validator bound; text requests
@@ -78,6 +85,21 @@ is retained in this repository.
   package's stale unadapted AOT binary. Matched 256-in/128-out C1 qualification
   improved output throughput from 19.03 to 28.58 tok/s (+50.17%) at 41.24%
   accepted draft tokens.
+
+- **Native DSpark launch profile:** Native Vision defaults to qualified K6,
+  covering two passes through its three next-token predictor layers, while
+  native text and the one-Spark EXL3 role default to K5. Greedy drafting is the
+  speed-first default, with probabilistic drafting, target-only controls, and
+  explicit draft-depth tuning retained as overrides; the multimodal wrapper
+  carries vLLM's EAGLE3 interface so auxiliary target hidden states are
+  delegated to the underlying native DeepSeek decoder.
+
+- **Adaptive DSpark distinction:** The SM121 patch makes vLLM's stock adaptive
+  verifier graph-safe for DeepSeek V4, but its matched Vision content score was
+  below fixed greedy K6, so it remains opt-in. That result does not qualify or
+  reject ds4rt's more capable controller, which adds request-local online
+  shared/per-position confidence residuals and online context/row cost learning
+  before a global search over the measured jagged verification curve.
 
 - **Native Vision TP2 baseline:** The full 48-shard model now starts on two
   SM121 Sparks and serves image-sensitive requests. A standardized warm
@@ -126,5 +148,9 @@ is retained in this repository.
 - **Passed:** Native DSpark K5 starts on the mixed EXL3 model and improves the
   matched C1 output throughput by 50.17% over target-only decode. Evidence is
   retained in `validation/2026-09-01-spark-exl3-qualification.md`.
+- **Passed:** Prove the shared B12x compressed-MLA adapter enters the real
+  Vision hot path, then retain it as opt-in because its 19.0%-faster isolated
+  kernel was 1.62% slower on the matched full-model content score. Evidence is
+  retained in `validation/2026-09-02-b12x-compressed-mla.md`.
 - Freeze one committed production-candidate digest, then run the separate
   native Vision TP2 and one-Spark EXL3 release suites against that exact image.

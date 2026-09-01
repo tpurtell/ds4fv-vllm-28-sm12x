@@ -26,7 +26,7 @@ source-only checks that do not import vLLM or initialize CUDA.
 | Runtime base | `vllm/vllm-openai@sha256:2a7cde230b59f3ce6cab33dd245ba6bee41aa87b38c9fe84f966ff24016813ce` |
 | vLLM | `0.28.0` (`2cf0a6915ce544dc493a0990f2ea38d81601128a`) |
 | Ray | `2.48.0` |
-| B12x | `tpurtell/sparkinfer-glmrt@a13677130cd144772bc7528238fe2244bbe3d0d4` |
+| B12x | `tpurtell/sparkinfer-glmrt@1713e2acb8e810888e4be2545e4a31baf0667448` |
 | Native checkpoint | `deepseek-ai/DeepSeek-V4-Flash-0731@9e165c30e2704aec5d9d593cce3eebd58bbef1cb` |
 | Vision checkpoint | `deepseek-ai/DeepSeek-V4-Flash-Vision-Exp@86f746b36186f0e567729a5c06a8c918caba82a9` |
 
@@ -84,6 +84,35 @@ cross-NIC policies remain environment overrides, but the defaults are now
 qualified: merged dual rail with `NCCL_CROSS_NIC=2` was 4.84% faster than one
 HCA on the matched native text TP2 prefill run.
 
+Native DSpark is enabled by default. Vision uses the qualified K6 depth (two
+passes through its three next-token predictor layers), while native text
+defaults to K5. Drafting is greedy by default; use
+`DRAFT_SAMPLE_METHOD=probabilistic` for stochastic drafting,
+`DSPARK_TOKENS=<n>` for an explicitly qualified depth, or `ENABLE_DSPARK=0`
+for a target-only control. Regular CUDA graphs are retained and the slower
+breakable-graph mode is disabled by default. vLLM's stock adaptive verifier is
+available with `DSPARK_ADAPTIVE_VERIFICATION=1`, but fixed-depth verification
+remains the qualified default; this does not include ds4rt's online
+request-local residual controller.
+
+The shared B12x compressed sparse MLA decode adapter is retained as an opt-in
+experiment with `DS4FV_USE_B12X_COMPRESSED_MLA=1`. It wins the isolated exact
+kernel workload, but the matched full-model content suite was 1.62% slower, so
+the qualified default remains vLLM's existing split decode path.
+
+## One-Spark EXL3 launch
+
+The mixed K2/K3 EXL3 checkpoint fits on one Spark and uses the same image:
+
+```bash
+SPARK_HOST=kiwi \
+DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:native-dev \
+scripts/launch-one-spark-exl3.sh
+```
+
+Its default is native DSpark K5 with greedy drafting. The target-only and
+explicit tuning controls above apply to this launcher as well.
+
 ## Status
 
 The combined image builds independently on both arm64 Sparks, and its B12x
@@ -98,7 +127,8 @@ See the [no-GPU contract evidence](validation/2026-09-01-spark-no-gpu.md) and
 The [native text TP2 runtime](validation/2026-09-01-spark-tp2-text.md) also
 loads all shards, serves correctly, and reaches 2,234.87 tok/s on its retained
 8,192+1 baseline. The retained matched fabric test makes merged dual rail the
-default. Reference-logit comparison, longer reliability testing, and the
-eventual EXL3 one-Spark mixed-layer qualification remain pending. The native
-results are not substitutes for the required equal-work mixed-K2/K3 versus
-uniform-K2 comparison.
+default, and the [compressed MLA qualification](validation/2026-09-02-b12x-compressed-mla.md)
+records why its faster isolated B12x kernel remains opt-in. Reference-logit
+comparison, longer reliability testing, and the frozen-image release suites
+remain pending; the mixed K2/K3 microbenchmark and matched one-Spark full-model
+gates have passed.

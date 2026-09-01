@@ -16,10 +16,27 @@ from PIL import Image
 
 from vllm.model_executor.layers.fused_moe.layer import FusedMoEFactory
 from vllm.model_executor.models import deepseek_v4_vision as vision
+from vllm.model_executor.models.interfaces import supports_eagle3
 from vllm.model_executor.models.registry import _MULTIMODAL_MODELS
-from vllm.models.deepseek_v4.sparse_mla import DeepseekV4SparseMLABackend
+from vllm.models.deepseek_v4.nvidia.flashinfer_sparse import (
+    DeepseekV4FlashInferMLASparseBackend,
+)
+from vllm.models.deepseek_v4.common.ops.cache_utils import (
+    _compute_global_topk_indices_and_lens_kernel,
+)
+from vllm.models.deepseek_v4.sparse_mla import (
+    DeepseekV4SparseMLABackend,
+    DeepseekV4SparseMLAMetadataBuilder,
+)
 from vllm.utils.flashinfer import has_flashinfer_sparse_mla_sm120_config
-from vllm.v1.attention.backends.mla.sparse_swa import DeepseekSparseSWABackend
+from vllm.v1.attention.backends.mla.indexer import (
+    DeepseekV32IndexerMetadataBuilder,
+    DeepseekV4IndexerBackend,
+)
+from vllm.v1.attention.backends.mla.sparse_swa import (
+    DeepseekSparseSWABackend,
+    DeepseekSparseSWAMetadataBuilder,
+)
 from vllm.v1.engine.input_processor import _model_max_input_token_id
 
 
@@ -100,6 +117,27 @@ def main() -> None:
     assert "vision_vocab_size" in factory_params
     assert DeepseekV4SparseMLABackend.supports_mm_prefix()
     assert DeepseekSparseSWABackend.supports_mm_prefix()
+    assert DeepseekV4IndexerBackend.supports_device_cpu_query_lens_mismatch()
+    assert (
+        DeepseekV4FlashInferMLASparseBackend
+        .supports_device_cpu_query_lens_mismatch()
+    )
+    assert DeepseekSparseSWABackend.supports_device_cpu_query_lens_mismatch()
+    indexer_builder_source = inspect.getsource(DeepseekV32IndexerMetadataBuilder)
+    assert "self.enable_adaptive_verification" in indexer_builder_source
+    assert "not self.enable_adaptive_verification" in indexer_builder_source
+    assert "enable_adaptive_verification" in inspect.getsource(
+        DeepseekV4SparseMLAMetadataBuilder.get_cudagraph_support
+    )
+    assert "enable_adaptive_verification" in inspect.getsource(
+        DeepseekSparseSWAMetadataBuilder.get_cudagraph_support
+    )
+    global_topk_source = inspect.getsource(
+        _compute_global_topk_indices_and_lens_kernel.fn
+    )
+    assert "safe_req_idx" in global_topk_source
+    assert "(local_idx >= 0) & is_valid_token" in global_topk_source
+    assert supports_eagle3(vision.DeepseekV4VisionForConditionalGeneration)
 
     vision_model_config = SimpleNamespace(
         get_vocab_size=lambda: config.vocab_size,

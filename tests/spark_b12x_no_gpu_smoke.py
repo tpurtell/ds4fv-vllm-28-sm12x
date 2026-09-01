@@ -10,6 +10,7 @@ from types import SimpleNamespace
 
 import torch
 
+from b12x.attention import compressed_sparse_mla
 import b12x.attention._shared.mla.prefill as prefill_dispatch
 import b12x.attention._shared.mla.prefill_mg as prefill_mg
 from b12x.attention._shared.mla.traits import ComputeMode, ModelType, ScaleFormat
@@ -57,6 +58,10 @@ def main() -> None:
     require_public_api(
         ep_moe,
         ("Caps", "plan", "prepare_expert_map", "bind", "run"),
+    )
+    require_public_api(
+        compressed_sparse_mla,
+        ("Caps", "plan", "bind", "run", "split_chunks_for_contract"),
     )
     require_public_api(wo_projection, ("pack_weights", "run_inv_rope"))
     assert wo_projection_impl._wo_b_fused_mma_tiler(1) == (16, 64)
@@ -125,6 +130,38 @@ def main() -> None:
     assert "wo_projection.run_inv_rope" in b12x_o_proj_source
     assert "tensor_model_parallel_all_reduce" in b12x_o_proj_source
     assert "wo_projection.pack_weights" in post_load_source
+
+    decode_source = inspect.getsource(
+        DeepseekV4FlashInferSM120Attention._forward_decode
+    )
+    b12x_decode_source = inspect.getsource(
+        DeepseekV4FlashInferSM120Attention._b12x_compressed_mla_decode
+    )
+    reserve_source = inspect.getsource(
+        DeepseekV4FlashInferSM120Attention._reserve_empty_forward_workspace
+    )
+    assert "self._b12x_compressed_mla_enabled" in decode_source
+    assert "compressed_sparse_mla.bind" in b12x_decode_source
+    assert "scratch_views.bind" in b12x_decode_source
+    assert "compressed_sparse_mla.run" in b12x_decode_source
+    assert "out=output" in b12x_decode_source
+    assert "self._get_b12x_compressed_mla_workspace" in reserve_source
+
+    # Preserve vLLM's aggregate packed-cache page stride while exposing the
+    # per-layer FP8 payload as B12x's rank-2 byte view. This is a CPU-only view
+    # contract check; no attention kernel is launched.
+    packed_stride = 1_039_680
+    cache_backing = torch.empty(4 * packed_stride, dtype=torch.uint8)
+    vllm_cache = torch.as_strided(
+        cache_backing,
+        size=(4, 64, 1, 584),
+        stride=(packed_stride, 584, 584, 1),
+    )
+    b12x_cache = DeepseekV4FlashInferSM120Attention._as_b12x_sparse_cache(
+        vllm_cache
+    )
+    assert b12x_cache.shape == (4, 64 * 584)
+    assert b12x_cache.stride() == (packed_stride, 1)
 
     # The public B12x dispatcher must route the exact Vision prefill envelope
     # (TP2 local heads=32, primary SWA width=512, compressed width=512) to the
@@ -209,8 +246,8 @@ def main() -> None:
     assert "use_b12x_wide_dual" in forward_prefill_source
 
     print(
-        "Spark no-GPU B12x MoE, native O-projection, and wide dual-prefill "
-        "smoke test passed"
+        "Spark no-GPU B12x MoE, native O-projection, compressed decode, and "
+        "wide dual-prefill smoke test passed"
     )
 
 

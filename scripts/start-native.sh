@@ -51,6 +51,44 @@ check_fabric_env() {
   require_value GLOO_SOCKET_IFNAME
 }
 
+configure_dspark_args() {
+  local output_name=$1 default_tokens=${2:-5}
+  local adaptive_verification draft_sample_method draft_tokens
+  local -n output=${output_name}
+  output=()
+  case "${ENABLE_DSPARK:-1}" in
+    0) ;;
+    1)
+      draft_sample_method=${DRAFT_SAMPLE_METHOD:-greedy}
+      draft_tokens=${DSPARK_TOKENS:-${default_tokens}}
+      adaptive_verification=${DSPARK_ADAPTIVE_VERIFICATION:-0}
+      case "${draft_sample_method}" in
+        probabilistic|greedy) ;;
+        *)
+          echo "DRAFT_SAMPLE_METHOD must be probabilistic or greedy" >&2
+          exit 64
+          ;;
+      esac
+      case "${adaptive_verification}" in
+        0) adaptive_verification=false ;;
+        1) adaptive_verification=true ;;
+        *)
+          echo "DSPARK_ADAPTIVE_VERIFICATION must be 0 or 1" >&2
+          exit 64
+          ;;
+      esac
+      output=(
+        --speculative-config
+        "{\"method\":\"dspark\",\"num_speculative_tokens\":${draft_tokens},\"draft_sample_method\":\"${draft_sample_method}\",\"enable_adaptive_verification\":${adaptive_verification}}"
+      )
+      ;;
+    *)
+      echo "ENABLE_DSPARK must be 0 or 1" >&2
+      exit 64
+      ;;
+  esac
+}
+
 start_ray_head() {
   check_fabric_env
   "${ray_python[@]}" start \
@@ -88,9 +126,11 @@ serve_model() {
   check_fabric_env
 
   local model_kind=${MODEL_KIND:-text}
+  local dspark_default_tokens=5
   local moe_mode=${MOE_MODE:-tp}
   local model_repo model_revision served_name
   local -a model_args=() vision_args=() prefix_args=() moe_args=()
+  local -a speculative_args=()
   case "${model_kind}" in
     text)
       model_repo=${MODEL_REPO:-deepseek-ai/DeepSeek-V4-Flash-0731}
@@ -107,6 +147,7 @@ serve_model() {
         --disable-chunked-mm-input
         --mm-processor-cache-gb 0
       )
+      dspark_default_tokens=6
       ;;
     *)
       echo "MODEL_KIND must be 'text' or 'vision', got '${model_kind}'" >&2
@@ -138,6 +179,7 @@ serve_model() {
   else
     prefix_args=(--enable-prefix-caching)
   fi
+  configure_dspark_args speculative_args "${dspark_default_tokens}"
 
   exec vllm serve "${model_args[@]}" \
     --served-model-name "${served_name}" \
@@ -156,11 +198,12 @@ serve_model() {
     --kv-cache-dtype "${KV_CACHE_DTYPE:-fp8}" \
     "${prefix_args[@]}" \
     "${vision_args[@]}" \
+    "${speculative_args[@]}" \
     "$@"
 }
 
 serve_exl3() {
-  local model_repo model_revision served_name model_ref draft_sample_method
+  local model_repo model_revision served_name model_ref
   local -a revision_args=() prefix_args=() speculative_args=()
   model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2.1-D2.2-calibrated-v3}
   model_revision=${MODEL_REVISION:-7827301eed170e2a5e394f45a13cc66561c601ed}
@@ -177,27 +220,7 @@ serve_exl3() {
   else
     prefix_args=(--no-enable-prefix-caching)
   fi
-  case "${ENABLE_DSPARK:-1}" in
-    0) ;;
-    1)
-      draft_sample_method=${DRAFT_SAMPLE_METHOD:-probabilistic}
-      case "${draft_sample_method}" in
-        probabilistic|greedy) ;;
-        *)
-          echo "DRAFT_SAMPLE_METHOD must be probabilistic or greedy" >&2
-          exit 64
-          ;;
-      esac
-      speculative_args=(
-        --speculative-config
-        "{\"method\":\"dspark\",\"num_speculative_tokens\":${DSPARK_TOKENS:-5},\"draft_sample_method\":\"${draft_sample_method}\"}"
-      )
-      ;;
-    *)
-      echo "ENABLE_DSPARK must be 0 or 1" >&2
-      exit 64
-      ;;
-  esac
+  configure_dspark_args speculative_args
 
   exec vllm serve "${model_ref}" \
     "${revision_args[@]}" \

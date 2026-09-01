@@ -28,6 +28,7 @@ from vllm.config.multimodal import BaseDummyOptions
 from vllm.inputs import MultiModalDataDict
 from vllm.model_executor.models.interfaces import (
     MultiModalEmbeddings,
+    SupportsEagle3,
     SupportsMultiModal,
     SupportsPP,
 )
@@ -624,7 +625,7 @@ def _vision_weights_mapper() -> WeightsMapper:
     dummy_inputs=DeepseekV4VisionDummyInputsBuilder,
 )
 class DeepseekV4VisionForConditionalGeneration(
-    nn.Module, SupportsMultiModal, SupportsPP
+    nn.Module, SupportsEagle3, SupportsMultiModal, SupportsPP
 ):
     requires_raw_input_tokens = True
     mm_prefix_clamp_sliding_window = True
