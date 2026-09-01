@@ -53,3 +53,32 @@ Total token throughput              2234.87 tok/s
 This is a native text TP2, dual-rail baseline. It is not a one-Spark EXL3 or
 mixed-K2/K3 result and must not be used in place of the equal-work EXL3
 acceptance comparison.
+
+## Concurrency and fabric comparison
+
+Eight fresh-seed 8,192+1 requests at maximum concurrency four all succeeded.
+Because `max_num_batched_tokens=8192`, long prefills were scheduler-serialized:
+aggregate throughput was 2,298.14 tok/s, but mean/median TTFT increased to
+11.568/14.152 seconds. This is expected backpressure at the configured token
+budget rather than a failed request or KV-capacity limit.
+
+The service was then relaunched with exactly one HCA and no NIC merge:
+
+```text
+NCCL_IB_HCA==rocep1s0f0
+NCCL_IB_MERGE_NICS=0
+NCCL_CROSS_NIC=0
+```
+
+After a separate 8,192-token shape warmup, the same five prompts, seed,
+greedy sampling, and concurrency-one settings as the retained dual-rail run
+produced:
+
+| Fabric | Throughput | Mean TTFT | Median TTFT | P99 TTFT |
+| --- | ---: | ---: | ---: | ---: |
+| merged dual rail, cross-NIC 2 | 2,234.87 tok/s | 3,665.79 ms | 3,652.11 ms | 3,721.54 ms |
+| `rocep1s0f0` only | 2,131.70 tok/s | 3,843.25 ms | 3,836.76 ms | 3,888.05 ms |
+
+Merged dual rail increased throughput by 4.84% and reduced mean TTFT by 4.62%
+for this workload. The launcher's existing two-HCA, merge-one, cross-NIC-two
+profile is therefore the qualified default.

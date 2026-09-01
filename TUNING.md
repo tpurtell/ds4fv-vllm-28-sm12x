@@ -59,9 +59,10 @@ is retained in this repository.
   and every other model retain the ordinary vocabulary limit.
 
 - **Two-rail networking:** Each Spark exposes two active RoCEv2 rails, with GID
-  index 3 on `rocep1s0f0/1` and `roceP2p1s0f0/1`. The launch profile will use
-  both HCAs and retain measured single-rail/dual-rail evidence before the final
-  default is frozen.
+  index 3 on `rocep1s0f0/1` and `roceP2p1s0f0/1`. On the same five warmed text
+  TP2 prompts, merged dual rail with cross-NIC 2 reached 2,234.87 tok/s versus
+  2,131.70 tok/s for `rocep1s0f0` alone: a 4.84% gain and 4.62% lower mean
+  TTFT. The two-HCA profile is now the qualified default.
 
 - **Mixed EXL3 Trellis:** The roughly 1300-to-800 prefill regression seen with
   mixed K2/K3 layers in the Mia image is not an acceptable baseline. Current
@@ -100,10 +101,13 @@ is retained in this repository.
   serve the image-sensitivity fixture, and benchmark the matched prefill case.
 - **Passed:** Load the pinned native text checkpoint with TP2, serve a correct
   generation sanity check, and retain a clean long-prefill baseline.
+- **Passed:** Compare one and two HCAs on the same warmed five-prompt workload;
+  retain merged dual rail as the 4.84%-faster default. An eight-request,
+  concurrency-four stress point also completed without failures.
 - Qualify Vision logits/routing against the reference rather than relying only
   on semantic image fixtures.
-- Measure TP2 and TP2+EP2 over both RoCE rails, then publish reliability and
-  benchmark artifacts.
+- Extend reliability evidence beyond the retained concurrency-four stress
+  point and exercise recovery from a worker or fabric interruption.
 - Add the one-Spark EXL3 profile only after the calibrated v3 checkpoint is
   complete; compare mixed K2/K3 against uniform K2 with identical prompts,
   batch/concurrency, draft depth, and cache state, accepting at most 5% prefill

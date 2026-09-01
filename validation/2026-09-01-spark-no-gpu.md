@@ -69,7 +69,7 @@ both nodes:
 | dodo | `rocep1s0f0` | `enp1s0f0np0` | `10.55.0.2/24` | 3 |
 | dodo | `roceP2p1s0f0` | `enP2p1s0f0np0` | `10.55.0.6/24` | 3 |
 
-This validates the launcher's exact dual-HCA selector and GID default. It does
-not by itself qualify throughput. The runtime baseline retained separately in
-`2026-09-01-spark-tp2-vision.md` used `NCCL_CROSS_NIC=2` and merged both rails;
-an otherwise-identical single-rail comparison remains required.
+This validates the launcher's exact dual-HCA selector and GID default. The
+matched runtime comparison retained in `2026-09-01-spark-tp2-text.md` then
+measured a 4.84% throughput improvement over one HCA, qualifying merged dual
+rail with `NCCL_CROSS_NIC=2` as the default.
