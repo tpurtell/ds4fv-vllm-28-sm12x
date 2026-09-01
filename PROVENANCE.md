@@ -30,6 +30,12 @@ package imports are translated to the current `b12x` namespace, and narrowly
 anchored integration edits are applied to vLLM 0.28 rather than replacing its
 newer MXFP4 oracle or runner.
 
+One additional EP compatibility delta is applied after verifying those source
+digests: B12x releases vLLM's source expert tensors after packing, while vLLM
+0.28 later derives a workspace expert count from the released tensor's shape.
+The adapter recognizes zero only as that sentinel and continues to validate
+the prepared allocation for every nonzero ownership count.
+
 The later EXL3 adapter will retain the mixed-Trellis direct-route lineage from
 ds4rt (`359e8055`) and the corresponding current B12x implementation rather
 than reproducing Mia's projection-by-projection mixed-layer fallback.

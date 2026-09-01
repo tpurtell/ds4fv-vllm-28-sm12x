@@ -11,8 +11,8 @@ empty and no GPU device passed to any test container.
   `sha256:2a7cde230b59f3ce6cab33dd245ba6bee41aa87b38c9fe84f966ff24016813ce`
 - Validation tag: `ds4fv-vllm-28-sm12x:recipe-check`
 - Image IDs:
-  - `ostrich`: `sha256:3ad9d0c73f448ab8d82c944c970ae652dfe2f9a125aae856fd54cd2f43177edd`
-  - `dodo`: `sha256:5c65b485c4b73d35c468344ad77435cf81720cf0bb140d2975a71cc1aef6c51c`
+  - `ostrich`: `sha256:b536981d2f9694bcb6d44fa46781737d1584ae0522d81167cda826e66e84dfdc`
+  - `dodo`: `sha256:9e819dcc26421e4f00936c3b5c2f3551d74ab558066c822e93eecc62f80ec395`
 - Result: all 12 Dockerfile stages completed independently on both Sparks,
   and each combined patched vLLM package passed `compileall`. The image IDs
   differ because fresh package/archive layers retain build metadata; the
@@ -30,6 +30,8 @@ then verified on each Spark:
 - vLLM's explicit `b12x` linear and MoE backend configuration;
 - native MXFP4 backend mapping and unrounded DeepSeek-V4 dimensions;
 - TP2 and replicated-input EP2 policy envelopes;
+- the EP2 released-source metadata sentinel used after B12x takes ownership of
+  packed expert allocations;
 - the native B12x output-projection API and qualified M1/M2..8 WO-B tilers;
 - the exact Vision 512+512 dual-cache dispatch and vLLM index-shape adapter;
 - removal of the legacy `sparkinfer` namespace and fork-only env attribute.

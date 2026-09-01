@@ -107,6 +107,12 @@ def main() -> None:
     assert "envs.VLLM_B12X_MOE_FORCE_MODELOPT_PREP" not in module_source
     assert "sparkinfer." not in module_source
 
+    ep_workspace_source = inspect.getsource(B12xEPExperts.workspace_shapes)
+    assert "source_local_num_experts not in (0, prepared.num_experts)" in (
+        ep_workspace_source
+    )
+    assert "released-parameter sentinel" in ep_workspace_source
+
     o_proj_source = inspect.getsource(DeepseekV4FlashInferSM120Attention._o_proj)
     b12x_o_proj_source = inspect.getsource(
         DeepseekV4FlashInferSM120Attention._b12x_o_proj

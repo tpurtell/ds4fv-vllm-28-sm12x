@@ -85,8 +85,39 @@ more than 5% mixed-prefill loss.
 
 ## Remaining qualification
 
-- Full-model expert-parallel startup and requests.
 - Text-checkpoint startup and representative text generation.
 - Image-logit/routing comparison against the checkpoint reference.
 - Matched single-rail versus dual-rail throughput and stability runs.
 - Longer-duration concurrency and failure-recovery testing.
+
+## Expert-parallel follow-up
+
+A second build retained all TP2 behavior and added the vLLM 0.28
+released-source metadata adaptation for B12x EP2:
+
+- `ostrich`: `sha256:b536981d2f9694bcb6d44fa46781737d1584ae0522d81167cda826e66e84dfdc`
+- `dodo`: `sha256:9e819dcc26421e4f00936c3b5c2f3551d74ab558066c822e93eecc62f80ec395`
+
+With dense layers TP2 and experts EP2, both ranks selected `B12xEPExperts`,
+loaded all shards, warmed 30 linear signatures and 14 EP MoE launch variants,
+and captured graphs in six seconds. Engine warmup took 89.64 seconds. The
+smaller KV allocation was 22.71 GiB, producing 442,527 cache tokens and 3.38x
+maximum-length concurrency.
+
+The red-left/blue-right fixture returned HTTP 200 with the correct ordering;
+the warm request took 3.14 seconds for 217 prompt plus 72 completion tokens.
+The same standardized prefill benchmark produced:
+
+```text
+Successful requests                 3
+Failed requests                     0
+Benchmark duration                  12.62 s
+Total input tokens                  24,576
+Mean / median / P99 TTFT            4206.29 / 4229.36 / 4295.44 ms
+Total token throughput              1947.72 tok/s
+```
+
+EP2 is therefore functional, but its warm prefill was about 10.95% below the
+TP2 baseline and did not materially reduce rank memory. TP2 remains the native
+two-Spark default; EP2 remains available with `MOE_MODE=ep` for workloads that
+later demonstrate a benefit.

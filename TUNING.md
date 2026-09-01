@@ -22,8 +22,10 @@ is retained in this repository.
 - **Native MXFP4 MoE port:** The newer B12x TP and replicated-input EP adapters
   were extracted from pinned vLLM lineage, adapted to the current public `b12x`
   API, and integrated into vLLM 0.28 without replacing its newer MXFP4 fixes.
-  A combined-image arm64/CUDA-hidden smoke test passed both TP2 and EP2 policy
-  contracts; kernel correctness and speed still require full-model Spark runs.
+  B12x takes ownership of packed weights and releases vLLM's source tensors;
+  the EP workspace adapter therefore treats a source-derived zero expert count
+  as that release sentinel while rejecting every nonzero ownership mismatch.
+  Full-model TP2 and EP2 both start and serve correctly on the two Sparks.
 
 - **Native Vision architecture:** The checkpoint's text-only architecture
   declaration cannot represent its vision tower, five image token types,
@@ -73,6 +75,12 @@ is retained in this repository.
   tok/s with 3.746-second mean TTFT; this is retained only as a native dual-rail
   baseline and is not an EXL3 mixed-layer comparison.
 
+- **Native Vision EP2:** Dense TP2 plus MoE EP2 warms 14 B12x launch variants,
+  serves the image-sensitivity fixture, and produces 1,947.72 tok/s with
+  4.206-second mean TTFT on the same 8,192+1 workload. That is 10.95% below
+  TP2 without a material rank-memory reduction, so native TP2 remains the
+  default and EP2 is an opt-in mode.
+
 ## Qualification queue
 
 - **Passed:** Build the pinned image and pass B12x plus Vision
@@ -82,6 +90,8 @@ is retained in this repository.
   experts, cross the wide dual-cache warmup, serve text and image requests,
   establish basic image sensitivity, and retain a warm prefill baseline in
   `validation/2026-09-01-spark-tp2-vision.md`.
+- **Passed:** Start dense TP2 plus MoE EP2, complete EP warmup/graph capture,
+  serve the image-sensitivity fixture, and benchmark the matched prefill case.
 - Load the text checkpoint and qualify Vision logits/routing against the
   reference rather than relying only on semantic image fixtures.
 - Measure TP2 and TP2+EP2 over both RoCE rails, then publish reliability and

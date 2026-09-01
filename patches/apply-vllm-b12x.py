@@ -70,6 +70,33 @@ def install_adapters(root: Path, source_tree: Path | None, source_base: str) -> 
                 1,
             )
             source = source.replace("import vllm.envs as envs\n", "", 1)
+        if relative.endswith("/b12x_ep_moe.py"):
+            old = '''        if prepared.num_experts != int(local_num_experts):
+            raise ValueError(
+                "B12X EP local expert metadata does not match prepared weights: "
+                f"metadata={int(local_num_experts)}, "
+                f"prepared={prepared.num_experts}"
+            )
+'''
+            new = '''        # The parent B12x owner releases the source tensors after packing.
+        # vLLM 0.28 subsequently derives this workspace argument from
+        # ``w1.shape[0]``, so zero is its released-parameter sentinel rather
+        # than an EP ownership count. The prepared allocation is authoritative;
+        # a nonzero disagreement still fails closed.
+        source_local_num_experts = int(local_num_experts)
+        if source_local_num_experts not in (0, prepared.num_experts):
+            raise ValueError(
+                "B12X EP local expert metadata does not match prepared weights: "
+                f"metadata={source_local_num_experts}, "
+                f"prepared={prepared.num_experts}"
+            )
+'''
+            if source.count(old) != 1:
+                raise RuntimeError(
+                    f"adapter {relative}: expected one released-source EP "
+                    f"metadata guard, found {source.count(old)}"
+                )
+            source = source.replace(old, new, 1)
         if "sparkinfer." in source:
             raise RuntimeError(f"adapter {relative}: legacy namespace remains")
 
