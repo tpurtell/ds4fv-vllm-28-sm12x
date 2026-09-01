@@ -14,7 +14,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable, Mapping, Sequence
 from functools import lru_cache
-from typing import Any
+from typing import Any, NamedTuple
 
 import numpy as np
 import torch
@@ -56,6 +56,18 @@ IMAGE_TOKEN_ID = 129264
 IMAGE_START, IMAGE_PAD, IMAGE, IMAGE_NEW_LINE, IMAGE_END = range(5)
 NUM_IMAGE_TYPES = 5
 COMPRESS_PAD_TO = 4
+
+
+class _ImageRecord(NamedTuple):
+    index: int
+    patch_start: int
+    block_start: int
+    permutation_start: int
+    patch_count: int
+    block_count: int
+    feature_count: int
+    n_vit_h: int
+    n_vit_w: int
 
 
 def _required_vision_value(config: Any, name: str) -> Any:
@@ -496,7 +508,9 @@ class _PatchEmbed(nn.Module):
         self.proj = nn.Linear(3 * patch**2, int(config.vision_dim))
 
     def forward(self, patches: torch.Tensor) -> torch.Tensor:
-        return self.proj(patches.flatten(1))
+        # Preserve any leading image-batch dimensions. The final three axes
+        # are always C, patch-height, patch-width.
+        return self.proj(patches.flatten(start_dim=-3))
 
 
 class _VisionAttention(nn.Module):
@@ -511,17 +525,20 @@ class _VisionAttention(nn.Module):
     def forward(
         self, x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor
     ) -> torch.Tensor:
-        n_tokens = x.size(0)
+        batch_shape = x.shape[:-2]
+        n_tokens = x.size(-2)
         q, k, v = (
-            tensor.view(n_tokens, self.n_heads, self.head_dim)
+            tensor.reshape(*batch_shape, n_tokens, self.n_heads, self.head_dim)
             for tensor in self.wqkv(x).chunk(3, dim=-1)
         )
         q = _apply_vision_rotary(q, cos, sin)
         k = _apply_vision_rotary(k, cos, sin)
         output = F.scaled_dot_product_attention(
-            q.transpose(0, 1), k.transpose(0, 1), v.transpose(0, 1)
+            q.transpose(-3, -2), k.transpose(-3, -2), v.transpose(-3, -2)
         )
-        return self.wo(output.transpose(0, 1).reshape(n_tokens, -1))
+        return self.wo(
+            output.transpose(-3, -2).reshape(*batch_shape, n_tokens, -1)
+        )
 
 
 class _VisionMLP(nn.Module):
@@ -591,14 +608,14 @@ class DeepseekV4VisionAligner(nn.Module):
 
     def forward(self, x: torch.Tensor, n_h: int, n_w: int) -> torch.Tensor:
         ratio = self.downsample_ratio
-        x = x.view(n_h, n_w, -1).permute(2, 0, 1)
+        x = x.reshape(*x.shape[:-2], n_h, n_w, -1).movedim(-1, -3)
         x = F.pad(x, (0, -n_w % ratio, 0, -n_h % ratio))
-        x = (
-            F.unfold(x.unsqueeze(0), ratio, stride=ratio)
-            .squeeze(0)
-            .transpose(0, 1)
-        )
-        return self.w2(F.gelu(self.w1(x)))
+        unbatched = x.ndim == 3
+        if unbatched:
+            x = x.unsqueeze(0)
+        x = F.unfold(x, ratio, stride=ratio).transpose(1, 2)
+        x = self.w2(F.gelu(self.w1(x)))
+        return x.squeeze(0) if unbatched else x
 
 
 def _vision_weights_mapper() -> WeightsMapper:
@@ -695,6 +712,14 @@ class DeepseekV4VisionForConditionalGeneration(
         features = self.aligner(
             self.vision(patches, n_vit_h, n_vit_w), n_vit_h, n_vit_w
         )
+        return self._compose_image_block(features, block_types, permutation)
+
+    def _compose_image_block(
+        self,
+        features: torch.Tensor,
+        block_types: torch.Tensor,
+        permutation: torch.Tensor,
+    ) -> torch.Tensor:
         permutation = permutation.to(device=features.device, dtype=torch.int64)
         features = features[permutation]
         block_types = block_types.to(device=features.device, dtype=torch.int64)
@@ -710,6 +735,29 @@ class DeepseekV4VisionForConditionalGeneration(
         block = sentinels[block_types]
         block[block_types == IMAGE] = features
         return block
+
+    def _encode_image_batch(
+        self,
+        patch_batch: torch.Tensor,
+        n_vit_h: int,
+        n_vit_w: int,
+        block_types: Sequence[torch.Tensor],
+        permutations: Sequence[torch.Tensor],
+    ) -> list[torch.Tensor]:
+        """Encode one equal-grid image group in a single isolated ViT batch."""
+        features = self.aligner(
+            self.vision(patch_batch, n_vit_h, n_vit_w), n_vit_h, n_vit_w
+        )
+        if features.ndim != 3 or int(features.shape[0]) != len(block_types):
+            raise RuntimeError(
+                "batched DeepSeek-V4 Vision features do not match the image group"
+            )
+        return [
+            self._compose_image_block(image_features, image_types, permutation)
+            for image_features, image_types, permutation in zip(
+                features, block_types, permutations
+            )
+        ]
 
     def embed_multimodal(self, **kwargs: object) -> MultiModalEmbeddings:
         patches = kwargs.pop("image_patches", None)
@@ -742,7 +790,7 @@ class DeepseekV4VisionForConditionalGeneration(
         ):
             raise ValueError("inconsistent DeepSeek-V4 Vision image metadata")
 
-        outputs: list[torch.Tensor] = []
+        records: list[_ImageRecord] = []
         patch_offset = block_offset = feature_offset = 0
         for index, (patch_count, block_count, feature_count) in enumerate(
             zip(counts, blocks, features)
@@ -753,20 +801,96 @@ class DeepseekV4VisionForConditionalGeneration(
                     f"image {index} has {feature_count} features, "
                     f"expected {expected_features}"
                 )
-            outputs.append(
-                self._encode_one_image(
-                    patches[patch_offset : patch_offset + patch_count],
-                    vit_grids[index],
-                    block_types[block_offset : block_offset + block_count],
-                    permutations[
-                        feature_offset : feature_offset + feature_count
-                    ],
+            n_vit_h, n_vit_w = (int(value) for value in vit_grids[index].tolist())
+            if patch_count != n_vit_h * n_vit_w:
+                raise ValueError(
+                    f"image {index} has {patch_count} patches, "
+                    f"expected {n_vit_h * n_vit_w}"
+                )
+            records.append(
+                _ImageRecord(
+                    index=index,
+                    patch_start=patch_offset,
+                    block_start=block_offset,
+                    permutation_start=feature_offset,
+                    patch_count=patch_count,
+                    block_count=block_count,
+                    feature_count=feature_count,
+                    n_vit_h=n_vit_h,
+                    n_vit_w=n_vit_w,
                 )
             )
             patch_offset += patch_count
             block_offset += block_count
             feature_offset += feature_count
-        return tuple(outputs)
+
+        if (
+            patch_offset != int(patches.shape[0])
+            or block_offset != int(block_types.shape[0])
+            or feature_offset != int(permutations.shape[0])
+        ):
+            raise ValueError("trailing DeepSeek-V4 Vision image metadata")
+
+        # Full attention must never cross image boundaries. Group equal grids
+        # along a real batch axis rather than concatenating their token axes.
+        groups: dict[tuple[int, int, int], list[_ImageRecord]] = {}
+        for record in records:
+            key = (record.n_vit_h, record.n_vit_w, record.patch_count)
+            groups.setdefault(key, []).append(record)
+
+        outputs: list[torch.Tensor | None] = [None] * len(records)
+        for (n_vit_h, n_vit_w, patch_count), group in groups.items():
+            if len(group) == 1:
+                record = group[0]
+                outputs[record.index] = self._encode_one_image(
+                    patches[
+                        record.patch_start : record.patch_start + patch_count
+                    ],
+                    vit_grids[record.index],
+                    block_types[
+                        record.block_start
+                        : record.block_start + record.block_count
+                    ],
+                    permutations[
+                        record.permutation_start
+                        : record.permutation_start + record.feature_count
+                    ],
+                )
+                continue
+
+            patch_batch = torch.stack(
+                [
+                    patches[
+                        record.patch_start : record.patch_start + patch_count
+                    ]
+                    for record in group
+                ]
+            )
+            encoded = self._encode_image_batch(
+                patch_batch,
+                n_vit_h,
+                n_vit_w,
+                [
+                    block_types[
+                        record.block_start
+                        : record.block_start + record.block_count
+                    ]
+                    for record in group
+                ],
+                [
+                    permutations[
+                        record.permutation_start
+                        : record.permutation_start + record.feature_count
+                    ]
+                    for record in group
+                ],
+            )
+            for record, image_block in zip(group, encoded):
+                outputs[record.index] = image_block
+
+        if any(output is None for output in outputs):
+            raise RuntimeError("DeepSeek-V4 Vision image batching lost an output")
+        return tuple(output for output in outputs if output is not None)
 
     def forward(
         self,

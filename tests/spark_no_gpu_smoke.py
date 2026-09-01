@@ -108,6 +108,33 @@ def main() -> None:
     assert vit_grid.tolist() == [ref_vit_h, ref_vit_w]
     assert llm_grid.tolist() == [ref_llm_h, ref_llm_w]
 
+    # Equal-grid images must share one real ViT batch dimension without
+    # allowing full attention to cross image boundaries. Compare the batched
+    # tower+aligner path directly with independent single-image executions.
+    torch.manual_seed(121)
+    tiny_vision_config = SimpleNamespace(
+        vision_patch_size=2,
+        vision_dim=8,
+        vision_n_heads=2,
+        vision_inter_dim=16,
+        vision_n_layers=2,
+        vision_rope_theta=10000.0,
+        vision_downsample_ratio=2,
+        hidden_size=12,
+    )
+    tower = vision.DeepseekV4VisionTower(tiny_vision_config).eval()
+    aligner = vision.DeepseekV4VisionAligner(tiny_vision_config).eval()
+    image_batch = torch.randn(3, 4, 3, 2, 2)
+    with torch.no_grad():
+        batched_features = aligner(tower(image_batch, 2, 2), 2, 2)
+        serial_features = torch.stack(
+            [aligner(tower(image, 2, 2), 2, 2) for image in image_batch]
+        )
+    assert batched_features.shape == (3, 1, 12)
+    torch.testing.assert_close(
+        batched_features, serial_features, rtol=1e-5, atol=1e-5
+    )
+
     assert (
         _MULTIMODAL_MODELS["DeepseekV4VisionForConditionalGeneration"][0]
         == "deepseek_v4_vision"

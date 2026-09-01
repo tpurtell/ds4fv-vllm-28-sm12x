@@ -65,6 +65,11 @@ is retained in this repository.
   exact Vision architecture receive the wider validator bound; text requests
   and every other model retain the ordinary vocabulary limit.
 
+- **Shape-grouped Vision encoding:** Equal-grid images now cross the replicated
+  Vision tower as one true batch, while SDPA keeps a separate attention axis
+  per image. This replaces the serial full-ViT-per-image loop that made a cold
+  16-image request spend minutes at full GPU utilization.
+
 - **Two-rail networking:** Each Spark exposes two active RoCEv2 rails, with GID
   index 3 on `rocep1s0f0/1` and `roceP2p1s0f0/1`. On the same five warmed text
   TP2 prompts, merged dual rail with cross-NIC 2 reached 2,234.87 tok/s versus
