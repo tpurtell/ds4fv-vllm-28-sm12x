@@ -115,6 +115,8 @@ def main() -> None:
         '"structured output"',
         '"tool parser"',
         "timed_concurrent_requests(",
+        "for choice_count in (2, 4)",
+        '"temperature": 0.2',
         "for index in range(2)",
         "for index in range(4)",
     ):

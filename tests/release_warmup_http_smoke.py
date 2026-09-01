@@ -121,9 +121,19 @@ def main() -> None:
         for payload in completion_payloads
         if "ds4fv-release-c4-" in payload.get("cache_salt", "")
     ]
+    batched_choice_payloads = {
+        int(payload["n"]): payload
+        for payload in completion_payloads
+        if "ds4fv-release-n" in payload.get("cache_salt", "")
+    }
     assert len(c2_payloads) == 2
     assert len(c4_payloads) == 4
     assert all(payload.get("n", 1) == 1 for payload in c2_payloads + c4_payloads)
+    assert set(batched_choice_payloads) == {2, 4}
+    assert all(
+        payload["temperature"] == 0.2
+        for payload in batched_choice_payloads.values()
+    )
 
     chat_payloads = [
         payload for path, payload in REQUESTS if path == "/v1/chat/completions"

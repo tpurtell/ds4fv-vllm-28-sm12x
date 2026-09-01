@@ -136,9 +136,10 @@ is retained in this repository.
 
 - **Release-ready kernel warmup:** Docker health is gated on successful real
   requests covering DSpark's exact 8--256 scheduling buckets, rendered greedy
-  C1/C2/C4, chunk-crossing prefill, structured/tool parsing, and the Vision
-  1/4/16-image shapes. Triton and TileLang caches now persist beside the B12x
-  and FlashInfer caches so a container recreate does not rediscover known JITs.
+  C1/C2/C4, OpenAI `n=2`/`n=4` choice batches, chunk-crossing prefill,
+  structured/tool parsing, and the Vision 1/4/16-image shapes. The explicit
+  choice batches close the distinct DeepSeek sparse request-map specialization;
+  Triton and TileLang caches persist beside the B12x and FlashInfer caches.
 
 - **Native Vision TP2 baseline:** The full 48-shard model now starts on two
   SM121 Sparks and serves image-sensitive requests. A standardized warm

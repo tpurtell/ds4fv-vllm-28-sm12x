@@ -275,6 +275,28 @@ def main() -> None:
         args.request_timeout,
     )
 
+    # The release clients express concurrency as one OpenAI request with
+    # multiple choices (n=2/n=4).  That creates a different request-to-token
+    # mapping from several simultaneous n=1 requests and, on DeepSeek's sparse
+    # path, can select a distinct Triton pointer specialization.  Exercise both
+    # batched-choice shapes before the ready marker.
+    for choice_count in (2, 4):
+        timed_request(
+            f"greedy N{choice_count}",
+            args.base_url,
+            "/v1/completions",
+            {
+                **base_completion,
+                "n": choice_count,
+                "temperature": 0.2,
+                "cache_salt": (
+                    f"ds4fv-release-n{choice_count}-{nonce}"
+                ),
+            },
+            args.request_timeout,
+            expected_choices=choice_count,
+        )
+
     long_tokens = exact_token_prefix(args.base_url, model, 8192, args.request_timeout)
     timed_request(
         "8K prefill",
