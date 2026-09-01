@@ -12,10 +12,12 @@ ARG B12X_VLLM_ADAPTER_BASE=https://raw.githubusercontent.com/local-inference-lab
 ARG RAY_VERSION=2.48.0
 ARG INSTANTTENSOR_VERSION=0.1.9
 ARG VLLM_SITE_PACKAGES=/usr/local/lib/python3.12/dist-packages
+ARG RECIPE_COMMIT=unknown
 
 LABEL org.opencontainers.image.title="DeepSeek V4 Flash/Vision for DGX Spark" \
       org.opencontainers.image.description="arm64-only vLLM 0.28 runtime for GB10 / SM121" \
       org.opencontainers.image.source="https://github.com/tpurtell/ds4fv-vllm-28-sm12x" \
+      org.opencontainers.image.revision="${RECIPE_COMMIT}" \
       org.opencontainers.image.base.digest="sha256:2a7cde230b59f3ce6cab33dd245ba6bee41aa87b38c9fe84f966ff24016813ce" \
       io.tpurtell.target.arch="linux/arm64" \
       io.tpurtell.target.cuda.arch="sm_121a" \

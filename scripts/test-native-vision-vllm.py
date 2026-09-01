@@ -86,6 +86,15 @@ def main() -> None:
         help="Image counts to test; use '--image-counts 1' for a quick smoke.",
     )
     parser.add_argument("--timeout", type=float, default=1800)
+    parser.add_argument(
+        "--reject-image-count",
+        type=int,
+        default=17,
+        help="Require this over-limit image count to receive HTTP 400; use 0 to skip.",
+    )
+    parser.add_argument("--image-limit", type=int, default=16)
+    parser.add_argument("--image-id")
+    parser.add_argument("--recipe-commit")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
 
@@ -115,7 +124,8 @@ def main() -> None:
             },
         }
         req = urllib.request.Request(
-            args.base_url.rstrip("/") + "/v1/chat/completions",
+            args.base_url.rstrip("/").removesuffix("/v1")
+            + "/v1/chat/completions",
             data=json.dumps(payload).encode(),
             headers={"Content-Type": "application/json"},
         )
@@ -144,11 +154,30 @@ def main() -> None:
             "usage": body.get("usage"),
         }
 
+    overflow = None
+    overflow_passed = True
+    if args.reject_image_count:
+        status, body = request(args.reject_image_count)
+        expected_limit = args.image_limit
+        overflow_passed = status == 400 and str(expected_limit) in json.dumps(
+            body, ensure_ascii=False
+        )
+        overflow = {
+            "passed": overflow_passed,
+            "status": status,
+            "expected_limit": expected_limit,
+            "response": body,
+        }
+
     report = {
-        "schema": "deepseek-v4-flash-native-vision.v1",
+        "schema": "deepseek-v4-flash-native-vision.v2",
         "model": args.model,
-        "image_counts": results,
-        "passed": all(item["passed"] for item in results.values()),
+        "image_id": args.image_id,
+        "recipe_commit": args.recipe_commit,
+        "supported_image_counts": results,
+        "over_limit_rejection": overflow,
+        "passed": all(item["passed"] for item in results.values())
+        and overflow_passed,
     }
     rendered = json.dumps(report, indent=2, ensure_ascii=False) + "\n"
     if args.output is not None:

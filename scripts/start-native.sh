@@ -146,6 +146,7 @@ serve_model() {
         '{"architectures":["DeepseekV4VisionForConditionalGeneration"],"is_mm_prefix_lm":true,"vision_text_sliding_window":128,"sliding_window":512}'
         --disable-chunked-mm-input
         --mm-processor-cache-gb 0
+        --limit-mm-per-prompt '{"image":16}'
       )
       dspark_default_tokens=6
       ;;
@@ -196,6 +197,11 @@ serve_model() {
     --max-num-batched-tokens "${MAX_NUM_BATCHED_TOKENS:-8192}" \
     --gpu-memory-utilization "${GPU_MEMORY_UTILIZATION:-0.85}" \
     --kv-cache-dtype "${KV_CACHE_DTYPE:-fp8}" \
+    --tokenizer-mode deepseek_v4 \
+    --tool-call-parser deepseek_v4 \
+    --enable-auto-tool-choice \
+    --reasoning-parser deepseek_v4 \
+    --generation-config vllm \
     "${prefix_args[@]}" \
     "${vision_args[@]}" \
     "${speculative_args[@]}" \
@@ -239,6 +245,11 @@ serve_exl3() {
     --max-num-batched-tokens "${MAX_NUM_BATCHED_TOKENS:-8192}" \
     --gpu-memory-utilization "${GPU_MEMORY_UTILIZATION:-0.85}" \
     --kv-cache-dtype "${KV_CACHE_DTYPE:-fp8}" \
+    --tokenizer-mode deepseek_v4 \
+    --tool-call-parser deepseek_v4 \
+    --enable-auto-tool-choice \
+    --reasoning-parser deepseek_v4 \
+    --generation-config vllm \
     --enable-chunked-prefill \
     "${prefix_args[@]}" \
     "${speculative_args[@]}" \

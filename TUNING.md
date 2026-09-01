@@ -105,9 +105,19 @@ is retained in this repository.
 - **Content benchmark scoring:** The retained speed suite scores seven content
   categories, with normal and `response_format` structured JSON weighted 0.5
   each so constrained decoding cannot double-count the category. Orchid is a
-  separate maximum-speed arm; schema v2 asks for a pure continuous stream to
+  separate maximum-speed arm; schema v3 asks for a pure continuous stream to
   the output limit and validates purity/minimum repetitions instead of an exact
-  early stop.
+  early stop, while every visible semantic arm now has a release contract.
+
+- **Release API contracts:** Both launch roles explicitly enable the native
+  DeepSeek V4 tokenizer, reasoning parser, and automatic tool parser; Vision
+  also enforces the qualified 16-image ceiling. The frozen-image suite checks
+  exact tool arguments plus 1/4/16-image ordering and image-17 rejection.
+
+- **Frozen-image benchmark harness:** The release runner records an immutable
+  image ID plus the OCI-baked recipe commit across code-agent decode/depth,
+  cold 8K--128K prefill, semantic content, 128K retrieval, prefix/Vision, and
+  C4 soak receipts; structured normal and constrained arms retain half weight.
 
 - **Native Vision TP2 baseline:** The full 48-shard model now starts on two
   SM121 Sparks and serves image-sensitive requests. A standardized warm
@@ -163,5 +173,8 @@ is retained in this repository.
   Vision hot path, then retain it as opt-in because its 19.0%-faster isolated
   kernel was 1.62% slower on the matched full-model content score. Evidence is
   retained in `validation/2026-09-02-b12x-compressed-mla.md`.
+- **Passed:** Source-check and minimally exercise the frozen-image benchmark
+  clients without running a premature full suite; the development-only smoke
+  is retained in `validation/2026-09-02-release-harness-smoke.md`.
 - Freeze one committed production-candidate digest, then run the separate
   native Vision TP2 and one-Spark EXL3 release suites against that exact image.

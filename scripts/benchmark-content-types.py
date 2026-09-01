@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 import statistics
@@ -68,7 +69,7 @@ ARMS = {
         "exposition",
         "Explain virtual memory to a junior programmer in five concise bullet points, "
         "including paging, page faults, and the role of the TLB.",
-        224,
+        384,
     ),
     "structured-json-normal": PromptArm(
         "structured-output", STRUCTURED_PROMPT, 128, score_weight=0.5
@@ -84,7 +85,7 @@ ARMS = {
         "multilingual",
         "請用繁體中文，以四個簡短條列解釋什麼是寫入時複製（copy-on-write），"
         "並包含一個行程 fork 後修改記憶體頁面的例子。",
-        192,
+        384,
     ),
 }
 
@@ -93,6 +94,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://127.0.0.1:8000/v1")
     parser.add_argument("--model", required=True)
+    parser.add_argument("--role", choices=("native-vision", "exl3"))
+    parser.add_argument("--image-id")
+    parser.add_argument("--recipe-commit")
     parser.add_argument("--repeats", type=int, default=5)
     parser.add_argument("--orchid-warmups", type=int, default=1)
     parser.add_argument(
@@ -105,6 +109,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-orchid", action="store_true")
     parser.add_argument("--timeout", type=float, default=600.0)
     parser.add_argument("--run-id", default=None)
+    parser.add_argument(
+        "--require-contracts",
+        action="store_true",
+        help="Exit nonzero unless every timed semantic sample passes its contract.",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.repeats < 1 or args.orchid_count < 1 or args.orchid_max_tokens < 1:
@@ -135,7 +144,7 @@ def stream_completion(
     if response_format is not None:
         body["response_format"] = response_format
     request = urllib.request.Request(
-        f"{base_url.rstrip('/')}/chat/completions",
+        f"{base_url.rstrip('/').removesuffix('/v1')}/v1/chat/completions",
         data=json.dumps(body).encode(),
         headers={"Content-Type": "application/json"},
     )
@@ -168,6 +177,12 @@ def stream_completion(
     first = first or finished
     completion_tokens = int(usage["completion_tokens"])
     decode_seconds = max(0.001, finished - first)
+    orchid_summary = arm_summaries.get("orchid")
+    orchid_contract_passed = (
+        orchid_summary is None
+        or int(orchid_summary["valid_repetitions"])
+        == int(orchid_summary["samples"])
+    )
     return {
         "prompt_tokens": int(usage["prompt_tokens"]),
         "completion_tokens": completion_tokens,
@@ -180,8 +195,16 @@ def stream_completion(
 
 
 def structured_passed(content: str) -> bool:
+    json_text = content.strip()
+    fenced = re.fullmatch(
+        r"```(?:json)?\s*\n(?P<json>.*)\n```",
+        json_text,
+        flags=re.DOTALL | re.IGNORECASE,
+    )
+    if fenced is not None:
+        json_text = fenced.group("json")
     try:
-        value = json.loads(content)
+        value = json.loads(json_text)
     except json.JSONDecodeError:
         return False
     return (
@@ -194,6 +217,99 @@ def structured_passed(content: str) -> bool:
         and isinstance(value["rationale"], str)
         and bool(value["rationale"].strip())
     )
+
+
+def validate_semantic_contract(arm_id: str, content: str) -> tuple[bool, list[str]]:
+    """Validate every prompt-visible release contract without executing output."""
+
+    issues: list[str] = []
+    stripped = content.strip()
+    if not stripped:
+        return False, ["response is empty"]
+    if arm_id == "code":
+        match = re.fullmatch(
+            r"\s*```(?:python|py)?\s*\n(?P<code>.*)\n```\s*",
+            content,
+            flags=re.DOTALL | re.IGNORECASE,
+        )
+        if match is None:
+            issues.append("response is not exactly one Python code block")
+        else:
+            try:
+                tree = ast.parse(match.group("code"))
+            except SyntaxError:
+                issues.append("Python code does not parse")
+            else:
+                functions = [
+                    node
+                    for node in tree.body
+                    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                    and node.name == "merge_intervals"
+                ]
+                if len(functions) != 1:
+                    issues.append("merge_intervals function is missing or duplicated")
+                else:
+                    function = functions[0]
+                    if (
+                        not function.args.args
+                        or function.args.args[0].annotation is None
+                        or function.returns is None
+                    ):
+                        issues.append("merge_intervals lacks requested type hints")
+                    if ast.get_docstring(function) is None:
+                        issues.append("merge_intervals lacks a docstring")
+                if sum(isinstance(node, ast.Assert) for node in ast.walk(tree)) < 3:
+                    issues.append("fewer than three assert examples were provided")
+    elif arm_id == "math":
+        normalized = stripped.replace(",", "")
+        if re.search(r"(?<![0-9])(?:\$\s*)?194\.4(?:0)?(?![0-9])", normalized) is None:
+            issues.append("response does not contain the correct final price 194.40")
+        if not all(value in normalized for value in ("240", "25", "8")):
+            issues.append("response does not show the requested calculation inputs")
+    elif arm_id == "fable":
+        words = re.findall(r"\b[\w'-]+\b", stripped, flags=re.UNICODE)
+        if not 140 <= len(words) <= 170:
+            issues.append(f"fable has {len(words)} words, outside 140..170")
+        final_sentence = re.split(r"(?<=[.!?])\s+", stripped)[-1].casefold()
+        if not any(
+            term in final_sentence
+            for term in ("credit", "share", "together", "team", "fair", "both")
+        ):
+            issues.append("response does not end with a moral about sharing credit")
+    elif arm_id == "hello":
+        if len(stripped) > 512:
+            issues.append("short greeting response is unexpectedly long")
+    elif arm_id == "topic":
+        bullets = [
+            line
+            for line in stripped.splitlines()
+            if re.match(r"^\s*(?:[-*•]|[1-5][.)])\s+", line)
+        ]
+        if len(bullets) != 5:
+            issues.append(f"response has {len(bullets)} bullets, expected five")
+        lowered = stripped.casefold()
+        for term in ("paging", "page fault", "tlb"):
+            if term not in lowered:
+                issues.append(f"response omits {term}")
+    elif arm_id.startswith("structured-json"):
+        if not structured_passed(content):
+            issues.append("response does not preserve the exact file-edit JSON contract")
+    elif arm_id == "multilingual":
+        bullets = [
+            line
+            for line in stripped.splitlines()
+            if re.match(r"^\s*(?:[-*•]|[1-4][.)、])\s*", line)
+        ]
+        if len(bullets) != 4:
+            issues.append(f"response has {len(bullets)} bullets, expected four")
+        lowered = stripped.casefold()
+        if not ("寫入時複製" in stripped or "copy-on-write" in lowered):
+            issues.append("response omits copy-on-write")
+        if "fork" not in lowered or "頁" not in stripped:
+            issues.append("response omits the requested fork/page example")
+    else:
+        raise ValueError(f"no semantic contract for arm {arm_id!r}")
+    return not issues, issues
 
 
 def compact_record(
@@ -213,11 +329,17 @@ def compact_record(
     }
     if arm.category == "structured-output":
         record["structured_contract_passed"] = structured_passed(content)
+    if arm_id != "orchid":
+        passed, issues = validate_semantic_contract(arm_id, content)
+        record["quality_contract_passed"] = passed
+        record["quality_contract_issues"] = issues
     if arm_id == "orchid":
         words = re.findall(r"\b[A-Za-z]+\b", content)
         occurrences = sum(word.lower() == "orchid" for word in words)
         record["observed_orchid_count"] = occurrences
-        record["orchid_only"] = bool(words) and occurrences == len(words)
+        record["orchid_only"] = re.fullmatch(
+            r"\s*orchid(?:\s+orchid)*\s*", content, flags=re.IGNORECASE
+        ) is not None
         record["orchid_minimum_reached"] = occurrences >= int(raw["minimum_count"])
     return record
 
@@ -239,9 +361,9 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
             "max_decode_tok_s": max(rates),
             "completion_tokens": [int(sample["completion_tokens"]) for sample in samples],
         }
-        if samples[0]["category"] == "structured-output":
+        if arm_id != "orchid":
             summary["contract_passes"] = sum(
-                bool(sample["structured_contract_passed"]) for sample in samples
+                bool(sample["quality_contract_passed"]) for sample in samples
             )
         if arm_id == "orchid":
             summary["valid_repetitions"] = sum(
@@ -256,10 +378,23 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
         float(value["score_weight"]) * float(value["median_decode_tok_s"])
         for value in scored.values()
     ) / total_weight
+    contract_records = [
+        record
+        for record in records
+        if record["timed"] and record["arm"] != "orchid"
+    ]
     return {
         "arms": arm_summaries,
         "weighted_content_score_tok_s": weighted_score,
         "weighted_content_score_total_weight": total_weight,
+        "quality_contract_passes": sum(
+            bool(record["quality_contract_passed"]) for record in contract_records
+        ),
+        "quality_contract_total": len(contract_records),
+        "quality_contract_passed": all(
+            bool(record["quality_contract_passed"]) for record in contract_records
+        ),
+        "orchid_contract_passed": orchid_contract_passed,
     }
 
 
@@ -267,10 +402,15 @@ def main() -> None:
     args = parse_args()
     run_id = args.run_id or f"run-{time.time_ns()}"
     report: dict[str, Any] = {
-        "schema": "ds4fv-content-types-v2",
+        "schema": "ds4fv-content-types-v3",
         "run_id": run_id,
         "base_url": args.base_url,
         "model": args.model,
+        "provenance": {
+            "role": args.role,
+            "image_id": args.image_id,
+            "recipe_commit": args.recipe_commit,
+        },
         "repeats": args.repeats,
         "thinking": "off",
         "temperature": 0,
@@ -337,6 +477,11 @@ def main() -> None:
     report["summary"] = summarize(report["records"])
     persist()
     print(json.dumps({"summary": report["summary"]}, sort_keys=True))
+    if args.require_contracts and not (
+        report["summary"]["quality_contract_passed"]
+        and report["summary"]["orchid_contract_passed"]
+    ):
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

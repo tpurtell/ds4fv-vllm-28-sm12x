@@ -39,6 +39,7 @@ Run this on a Spark, never on the workstation:
 
 ```bash
 docker build --platform linux/arm64 --progress=plain \
+  --build-arg RECIPE_COMMIT="$(git rev-parse HEAD)" \
   -t ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:native-dev .
 ```
 
@@ -70,7 +71,7 @@ It is a qualified option, but TP2 is the native default because EP2 was slower
 on the retained concurrency-one prefill baseline. Vision uses the
 checkpoint-specific architecture, 128-token text SWA, a
 512-token physical image cache span, no multimodal processor cache, and no
-prefix cache:
+prefix cache, with a hard 16-image request limit:
 
 ```bash
 MODEL_KIND=vision MOE_MODE=tp \
@@ -100,6 +101,10 @@ experiment with `DS4FV_USE_B12X_COMPRESSED_MLA=1`. It wins the isolated exact
 kernel workload, but the matched full-model content suite was 1.62% slower, so
 the qualified default remains vLLM's existing split decode path.
 
+Both serving roles expose DeepSeek V4's native tokenizer, reasoning parser,
+and automatic tool parser. The release suite includes a deterministic tool-call
+contract so these API paths cannot silently regress while kernel work changes.
+
 ## One-Spark EXL3 launch
 
 The mixed K2/K3 EXL3 checkpoint fits on one Spark and uses the same image:
@@ -116,6 +121,16 @@ one-Spark 256-input/128-output gate this profile reached 34.59 tok/s, 21.03%
 above the older probabilistic-K5 result and 1.88% above vLLM's stock adaptive
 K5; the [matched content qualification](validation/2026-09-02-exl3-greedy-adaptive.md)
 also favored fixed K5 by 4.85%.
+
+## Release benchmarks
+
+The frozen-image harness is documented in
+[benchmarks/README.md](benchmarks/README.md). It runs separate native Vision
+TP2 and one-Spark EXL3 suites with code-agent decode/concurrency and context
+depth curves, unique 8K--128K prefill, the weighted semantic/structured blend,
+tool use, 128K retrieval, role-specific Vision or prefix-cache checks, and a
+post-long-context C4 soak; full runs begin only after both roles use one exact
+production-candidate image ID.
 
 ## Status
 
