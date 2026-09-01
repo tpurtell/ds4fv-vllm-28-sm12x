@@ -145,6 +145,7 @@ def main() -> None:
     assert "TRITON_CACHE_DIR=/cache/huggingface/triton-cache" in dockerfile
     assert "--start-period=60m" in dockerfile
     assert "apply-vllm-long-prefill-jit.py" in dockerfile
+    assert "apply-vllm-sparse-indexer-sm121.py" in dockerfile
 
     long_prefill_patch = (
         ROOT / "patches/apply-vllm-long-prefill-jit.py"
@@ -155,6 +156,14 @@ def main() -> None:
     assert '"            query_slice_start=WarmupIntRange(0, 3),\\n"' in (
         long_prefill_patch
     )
+
+    sparse_indexer_patch = (
+        ROOT / "patches/apply-vllm-sparse-indexer-sm121.py"
+    ).read_text()
+    assert "not current_platform.is_device_capability_family(120)" in (
+        sparse_indexer_patch
+    )
+    assert "ordinary" in sparse_indexer_patch
 
     vision = (
         ROOT / "overlay/vllm/model_executor/models/deepseek_v4_vision.py"

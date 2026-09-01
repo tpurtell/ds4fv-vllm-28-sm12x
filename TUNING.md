@@ -75,6 +75,10 @@ is retained in this repository.
   only after a prefill exceeds the indexer logits budget. This prevents the
   128K path from compiling `BuildPrefillChunkMetadataKernel` after readiness.
 
+- **SM121 sparse-indexer safety:** Repeated DSv4 decode launches can deadlock
+  vLLM 0.28's persistent radix TopK path on GB10, so SM121 uses the ordinary
+  per-row TopK decoder while other CUDA capability families remain unchanged.
+
 - **Two-rail networking:** Each Spark exposes two active RoCEv2 rails, with GID
   index 3 on `rocep1s0f0/1` and `roceP2p1s0f0/1`. On the same five warmed text
   TP2 prompts, merged dual rail with cross-NIC 2 reached 2,234.87 tok/s versus
