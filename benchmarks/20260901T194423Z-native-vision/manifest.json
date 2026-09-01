@@ -1,0 +1,24 @@
+{
+  "schema": "ds4fv-release-suite-manifest.v1",
+  "started_utc": "2026-09-01T19:44:23.755262+00:00",
+  "role": "native-vision",
+  "base_url": "http://10.55.0.3:8000",
+  "model": "deepseek-v4-flash-vision-exp-native",
+  "image_id": "sha256:e88845cec1839ab25cac0e3d50b6643f803eba7da20e554de8692c817e44708e",
+  "recipe_commit": "19d30c3c7953c26698d003a1876409ee485c3bf8",
+  "harness_revision": "350b0c4c53347c5bda2a6db54c44f14378849df8",
+  "dspark_tokens": 6,
+  "dspark_policy": "fixed",
+  "draft_sample_method": "greedy",
+  "completed_utc": "2026-09-01T20:23:13Z",
+  "passed": false,
+  "failed_gate": "post-ready-jit",
+  "failure": {
+    "post_ready_jit_count": 1,
+    "kernels": [
+      "BuildPrefillChunkMetadataKernel"
+    ],
+    "evidence": "post-suite-jit.json"
+  },
+  "notes": "All HTTP contracts completed successfully, but the exact image is rejected because the first 128K path compiled after readiness. The final content report used the harness revision above; the earlier decode and prefill receipts retain the image recipe provenance."
+}

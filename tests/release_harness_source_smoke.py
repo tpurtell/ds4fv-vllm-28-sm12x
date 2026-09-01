@@ -142,6 +142,17 @@ def main() -> None:
     assert "TILELANG_CACHE_DIR=/cache/huggingface/tilelang-cache" in dockerfile
     assert "TRITON_CACHE_DIR=/cache/huggingface/triton-cache" in dockerfile
     assert "--start-period=60m" in dockerfile
+    assert "apply-vllm-long-prefill-jit.py" in dockerfile
+
+    long_prefill_patch = (
+        ROOT / "patches/apply-vllm-long-prefill-jit.py"
+    ).read_text()
+    assert '"            query_slice_start=WarmupIntRange(0, 2),\\n"' in (
+        long_prefill_patch
+    )
+    assert '"            query_slice_start=WarmupIntRange(0, 3),\\n"' in (
+        long_prefill_patch
+    )
 
     vision = (
         ROOT / "overlay/vllm/model_executor/models/deepseek_v4_vision.py"

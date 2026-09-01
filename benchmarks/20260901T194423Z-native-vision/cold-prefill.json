@@ -1,0 +1,164 @@
+{
+  "schema": "ds4fv-prefill-depth.v1",
+  "method": "C1 exact-length unique prompts; client request to first streamed token; server tokenization and one-token handoff included; every depth is warmed independently and no earlier prefix can be reused",
+  "provenance": {
+    "role": "native-vision",
+    "image_id": "sha256:e88845cec1839ab25cac0e3d50b6643f803eba7da20e554de8692c817e44708e",
+    "recipe_commit": "19d30c3c7953c26698d003a1876409ee485c3bf8",
+    "model": "deepseek-v4-flash-vision-exp-native"
+  },
+  "runs_per_point": 3,
+  "points": [
+    {
+      "prompt_tokens": 8192,
+      "effective_prompt_tokens_per_second": {
+        "median": 2082.8806256192292,
+        "min": 2075.7263517989654,
+        "max": 2090.8864313331646
+      },
+      "ttft_seconds": {
+        "median": 3.9330146429128945,
+        "min": 3.9179555031005293,
+        "max": 3.946570314001292
+      },
+      "runs": [
+        {
+          "prompt_tokens": 8192,
+          "ttft_seconds": 3.946570314001292,
+          "effective_prompt_tokens_per_second": 2075.7263517989654
+        },
+        {
+          "prompt_tokens": 8192,
+          "ttft_seconds": 3.9179555031005293,
+          "effective_prompt_tokens_per_second": 2090.8864313331646
+        },
+        {
+          "prompt_tokens": 8192,
+          "ttft_seconds": 3.9330146429128945,
+          "effective_prompt_tokens_per_second": 2082.8806256192292
+        }
+      ]
+    },
+    {
+      "prompt_tokens": 16384,
+      "effective_prompt_tokens_per_second": {
+        "median": 2097.100466766355,
+        "min": 1964.2627954566228,
+        "max": 2107.3940421579628
+      },
+      "ttft_seconds": {
+        "median": 7.812691980972886,
+        "min": 7.774530852911994,
+        "max": 8.341042775893584
+      },
+      "runs": [
+        {
+          "prompt_tokens": 16384,
+          "ttft_seconds": 7.774530852911994,
+          "effective_prompt_tokens_per_second": 2107.3940421579628
+        },
+        {
+          "prompt_tokens": 16384,
+          "ttft_seconds": 7.812691980972886,
+          "effective_prompt_tokens_per_second": 2097.100466766355
+        },
+        {
+          "prompt_tokens": 16384,
+          "ttft_seconds": 8.341042775893584,
+          "effective_prompt_tokens_per_second": 1964.2627954566228
+        }
+      ]
+    },
+    {
+      "prompt_tokens": 32768,
+      "effective_prompt_tokens_per_second": {
+        "median": 2072.574347322422,
+        "min": 2067.6435245533853,
+        "max": 2092.814305289654
+      },
+      "ttft_seconds": {
+        "median": 15.810289287008345,
+        "min": 15.657385329017416,
+        "max": 15.847992949886248
+      },
+      "runs": [
+        {
+          "prompt_tokens": 32768,
+          "ttft_seconds": 15.847992949886248,
+          "effective_prompt_tokens_per_second": 2067.6435245533853
+        },
+        {
+          "prompt_tokens": 32768,
+          "ttft_seconds": 15.657385329017416,
+          "effective_prompt_tokens_per_second": 2092.814305289654
+        },
+        {
+          "prompt_tokens": 32768,
+          "ttft_seconds": 15.810289287008345,
+          "effective_prompt_tokens_per_second": 2072.574347322422
+        }
+      ]
+    },
+    {
+      "prompt_tokens": 65536,
+      "effective_prompt_tokens_per_second": {
+        "median": 2023.7554100054674,
+        "min": 2010.138993053934,
+        "max": 2033.4078091966755
+      },
+      "ttft_seconds": {
+        "median": 32.38336000288837,
+        "min": 32.22963918186724,
+        "max": 32.602720621041954
+      },
+      "runs": [
+        {
+          "prompt_tokens": 65536,
+          "ttft_seconds": 32.602720621041954,
+          "effective_prompt_tokens_per_second": 2010.138993053934
+        },
+        {
+          "prompt_tokens": 65536,
+          "ttft_seconds": 32.22963918186724,
+          "effective_prompt_tokens_per_second": 2033.4078091966755
+        },
+        {
+          "prompt_tokens": 65536,
+          "ttft_seconds": 32.38336000288837,
+          "effective_prompt_tokens_per_second": 2023.7554100054674
+        }
+      ]
+    },
+    {
+      "prompt_tokens": 128000,
+      "effective_prompt_tokens_per_second": {
+        "median": 1921.935801704849,
+        "min": 1900.8819530795101,
+        "max": 1926.0147239489866
+      },
+      "ttft_seconds": {
+        "median": 66.59951902995817,
+        "min": 66.4584742828738,
+        "max": 67.33716409513727
+      },
+      "runs": [
+        {
+          "prompt_tokens": 128000,
+          "ttft_seconds": 67.33716409513727,
+          "effective_prompt_tokens_per_second": 1900.8819530795101
+        },
+        {
+          "prompt_tokens": 128000,
+          "ttft_seconds": 66.4584742828738,
+          "effective_prompt_tokens_per_second": 1926.0147239489866
+        },
+        {
+          "prompt_tokens": 128000,
+          "ttft_seconds": 66.59951902995817,
+          "effective_prompt_tokens_per_second": 1921.935801704849
+        }
+      ]
+    }
+  ],
+  "passed": true
+}

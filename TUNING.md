@@ -70,6 +70,11 @@ is retained in this repository.
   per image. This replaces the serial full-ViT-per-image loop that made a cold
   16-image request spend minutes at full GPU utilization.
 
+- **Long-prefill indexer JIT closure:** vLLM's explicit DeepSeek sparse-indexer
+  warmup now includes the ordinary non-zero query-slice integer class used
+  only after a prefill exceeds the indexer logits budget. This prevents the
+  128K path from compiling `BuildPrefillChunkMetadataKernel` after readiness.
+
 - **Two-rail networking:** Each Spark exposes two active RoCEv2 rails, with GID
   index 3 on `rocep1s0f0/1` and `roceP2p1s0f0/1`. On the same five warmed text
   TP2 prompts, merged dual rail with cross-NIC 2 reached 2,234.87 tok/s versus

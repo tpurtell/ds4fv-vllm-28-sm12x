@@ -1,0 +1,31 @@
+{
+  "schema": "ds4fv-release-startup-jit-audit.v1",
+  "container": "ds4fv-prod-19d30c3-vision-head",
+  "image": "ds4fv-vllm-28-sm12x:prod-candidate-19d30c3",
+  "image_id": "sha256:e88845cec1839ab25cac0e3d50b6643f803eba7da20e554de8692c817e44708e",
+  "container_state": "running",
+  "health_status_at_audit": "healthy",
+  "ready_marker": "2026-09-01T19:43:20.454072291Z DS4FV release startup warmup complete; container is ready.",
+  "pre_ready_jit_count": 24,
+  "pre_ready_jit_kernels": [
+    "_compute_local_logits_stats_kernel",
+    "_compute_swa_indices_and_lens_kernel",
+    "_gumbel_sample_kernel",
+    "_pack_topk_routes_post_prefix_kernel",
+    "_pack_topk_routes_small_prefix_kernel",
+    "_prepare_dflash_inputs_kernel",
+    "_rejection_kernel",
+    "_resample_kernel",
+    "_w4a16_route_count_kernel",
+    "_w4a16_route_prefix_from_counts_kernel",
+    "mhc_pre_big_fuse_broadcast_with_norm_tilelang",
+    "mhc_pre_big_fuse_with_norm_tilelang"
+  ],
+  "post_ready_request_count": 299,
+  "post_ready_health_200_count": 233,
+  "post_ready_jit_count": 1,
+  "post_ready_jit_kernels": [
+    "BuildPrefillChunkMetadataKernel"
+  ],
+  "passed": false
+}
