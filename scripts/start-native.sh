@@ -1,0 +1,188 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+# Container entrypoint for a two-Spark Ray cluster.  The architecture check is
+# deliberately before any vLLM import so this Spark-only image fails closed on
+# an amd64 workstation or a non-GB10 CUDA device.
+if [[ "$(uname -m)" != aarch64 ]]; then
+  echo "This image is arm64-only and must run on a DGX Spark." >&2
+  exit 64
+fi
+
+python3 - <<'PY'
+import torch
+
+if not torch.cuda.is_available():
+    raise SystemExit("A visible GB10 GPU is required")
+capability = torch.cuda.get_device_capability(0)
+if capability != (12, 1):
+    raise SystemExit(f"Expected DGX Spark SM121, found compute capability {capability}")
+PY
+
+role=${DS4FV_ROLE:-head}
+if [[ $# -gt 0 ]]; then
+  case "$1" in
+    head|ray-head|ray-worker|worker|serve)
+      role=$1
+      shift
+      ;;
+  esac
+fi
+
+ray_python=(python3 -m ray.scripts.scripts)
+ray_head_ip=${RAY_HEAD_IP:-${VLLM_HOST_IP:-}}
+ray_port=${RAY_PORT:-6379}
+world_size=${DS4FV_WORLD_SIZE:-2}
+
+require_value() {
+  local name=$1 value=${!1:-}
+  if [[ -z "${value}" ]]; then
+    echo "${name} must be set" >&2
+    exit 64
+  fi
+}
+
+check_fabric_env() {
+  require_value VLLM_HOST_IP
+  require_value RAY_HEAD_IP
+  require_value NCCL_IB_HCA
+  require_value NCCL_IB_GID_INDEX
+  require_value NCCL_SOCKET_IFNAME
+  require_value GLOO_SOCKET_IFNAME
+}
+
+start_ray_head() {
+  check_fabric_env
+  "${ray_python[@]}" start \
+    --head \
+    --node-ip-address="${VLLM_HOST_IP}" \
+    --port="${ray_port}" \
+    --include-dashboard=false \
+    --disable-usage-stats
+}
+
+wait_for_ray_gpus() {
+  local attempts=${RAY_READY_ATTEMPTS:-180}
+  local attempt
+  for ((attempt = 1; attempt <= attempts; attempt++)); do
+    if RAY_ADDRESS="${ray_head_ip}:${ray_port}" \
+      EXPECTED_GPUS="${world_size}" python3 - <<'PY'
+import os
+import ray
+
+ray.init(address=os.environ["RAY_ADDRESS"], logging_level="ERROR")
+visible = int(ray.cluster_resources().get("GPU", 0))
+expected = int(os.environ["EXPECTED_GPUS"])
+raise SystemExit(0 if visible >= expected else 1)
+PY
+    then
+      return 0
+    fi
+    sleep 2
+  done
+  echo "Ray did not report ${world_size} GPUs before the readiness deadline" >&2
+  return 1
+}
+
+serve_model() {
+  check_fabric_env
+
+  local model_kind=${MODEL_KIND:-text}
+  local moe_mode=${MOE_MODE:-tp}
+  local model_repo model_revision served_name
+  local -a model_args=() vision_args=() prefix_args=() moe_args=()
+  case "${model_kind}" in
+    text)
+      model_repo=${MODEL_REPO:-deepseek-ai/DeepSeek-V4-Flash-0731}
+      model_revision=${MODEL_REVISION:-9e165c30e2704aec5d9d593cce3eebd58bbef1cb}
+      served_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-0731-native}
+      ;;
+    vision)
+      model_repo=${MODEL_REPO:-deepseek-ai/DeepSeek-V4-Flash-Vision-Exp}
+      model_revision=${MODEL_REVISION:-86f746b36186f0e567729a5c06a8c918caba82a9}
+      served_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-vision-exp-native}
+      vision_args=(
+        --hf-overrides
+        '{"architectures":["DeepseekV4VisionForConditionalGeneration"],"is_mm_prefix_lm":true,"vision_text_sliding_window":128,"sliding_window":512}'
+        --disable-chunked-mm-input
+        --mm-processor-cache-gb 0
+      )
+      ;;
+    *)
+      echo "MODEL_KIND must be 'text' or 'vision', got '${model_kind}'" >&2
+      exit 64
+      ;;
+  esac
+
+  case "${moe_mode}" in
+    tp) ;;
+    ep) moe_args=(--enable-expert-parallel) ;;
+    *)
+      echo "MOE_MODE must be 'tp' or 'ep', got '${moe_mode}'" >&2
+      exit 64
+      ;;
+  esac
+
+  if [[ -n "${MODEL_PATH:-}" ]]; then
+    model_args=("${MODEL_PATH}")
+  else
+    if [[ -z "${model_revision}" ]]; then
+      echo "MODEL_REVISION is required for a repository-backed text launch" >&2
+      exit 64
+    fi
+    model_args=("${model_repo}" --revision "${model_revision}")
+  fi
+
+  if [[ "${model_kind}" == vision || "${ENABLE_PREFIX_CACHING:-1}" != 1 ]]; then
+    prefix_args=(--no-enable-prefix-caching)
+  else
+    prefix_args=(--enable-prefix-caching)
+  fi
+
+  exec vllm serve "${model_args[@]}" \
+    --served-model-name "${served_name}" \
+    --host "${API_HOST:-0.0.0.0}" \
+    --port "${API_PORT:-8000}" \
+    --distributed-executor-backend ray \
+    --tensor-parallel-size "${TP_SIZE:-2}" \
+    "${moe_args[@]}" \
+    --moe-backend b12x \
+    --linear-backend b12x \
+    --disable-custom-all-reduce \
+    --max-model-len "${MAX_MODEL_LEN:-131072}" \
+    --max-num-seqs "${MAX_NUM_SEQS:-4}" \
+    --max-num-batched-tokens "${MAX_NUM_BATCHED_TOKENS:-8192}" \
+    --gpu-memory-utilization "${GPU_MEMORY_UTILIZATION:-0.85}" \
+    --kv-cache-dtype "${KV_CACHE_DTYPE:-fp8}" \
+    "${prefix_args[@]}" \
+    "${vision_args[@]}" \
+    "$@"
+}
+
+case "${role}" in
+  head)
+    start_ray_head
+    wait_for_ray_gpus
+    serve_model "$@"
+    ;;
+  ray-head)
+    start_ray_head
+    exec tail -f /dev/null
+    ;;
+  ray-worker|worker)
+    check_fabric_env
+    exec "${ray_python[@]}" start \
+      --address="${ray_head_ip}:${ray_port}" \
+      --node-ip-address="${VLLM_HOST_IP}" \
+      --disable-usage-stats \
+      --block
+    ;;
+  serve)
+    wait_for_ray_gpus
+    serve_model "$@"
+    ;;
+  *)
+    echo "Unknown DS4FV role '${role}'; expected head, ray-head, worker, or serve" >&2
+    exit 64
+    ;;
+esac
