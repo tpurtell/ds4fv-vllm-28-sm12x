@@ -93,8 +93,10 @@ serve image-sensitive requests across `ostrich` and `dodo`. On the retained
 tok/s for EP2, so TP2 is the default.
 
 See the [no-GPU contract evidence](validation/2026-09-01-spark-no-gpu.md) and
-[native Vision TP2 runtime evidence](validation/2026-09-01-spark-tp2-vision.md).
-The native text checkpoint, matched single/dual-rail tests, reference-logit
-comparison, and the eventual EXL3 one-Spark mixed-layer qualification remain
-pending. The native TP2 result is not a substitute for the required equal-work
-mixed-K2/K3 versus uniform-K2 comparison.
+[native Vision TP2/EP2 runtime evidence](validation/2026-09-01-spark-tp2-vision.md).
+The [native text TP2 runtime](validation/2026-09-01-spark-tp2-text.md) also
+loads all shards, serves correctly, and reaches 2,234.87 tok/s on its retained
+8,192+1 baseline. Matched single/dual-rail tests, reference-logit comparison,
+and the eventual EXL3 one-Spark mixed-layer qualification remain pending. The
+native results are not substitutes for the required equal-work mixed-K2/K3
+versus uniform-K2 comparison.

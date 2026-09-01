@@ -81,6 +81,12 @@ is retained in this repository.
   TP2 without a material rank-memory reduction, so native TP2 remains the
   default and EP2 is an opt-in mode.
 
+- **Native text TP2:** The pinned 48-shard text checkpoint starts with B12x
+  linear/MoE, serves a correct generation sanity check, and produces 2,234.87
+  tok/s with 3.666-second mean TTFT over five fresh 8,192+1 requests. Its
+  retained record excludes an earlier run contaminated by late JIT and prefix
+  reuse.
+
 ## Qualification queue
 
 - **Passed:** Build the pinned image and pass B12x plus Vision
@@ -92,8 +98,10 @@ is retained in this repository.
   `validation/2026-09-01-spark-tp2-vision.md`.
 - **Passed:** Start dense TP2 plus MoE EP2, complete EP warmup/graph capture,
   serve the image-sensitivity fixture, and benchmark the matched prefill case.
-- Load the text checkpoint and qualify Vision logits/routing against the
-  reference rather than relying only on semantic image fixtures.
+- **Passed:** Load the pinned native text checkpoint with TP2, serve a correct
+  generation sanity check, and retain a clean long-prefill baseline.
+- Qualify Vision logits/routing against the reference rather than relying only
+  on semantic image fixtures.
 - Measure TP2 and TP2+EP2 over both RoCE rails, then publish reliability and
   benchmark artifacts.
 - Add the one-Spark EXL3 profile only after the calibrated v3 checkpoint is
