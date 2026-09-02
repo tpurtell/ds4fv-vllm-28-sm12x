@@ -176,6 +176,12 @@ def main() -> None:
         indexer_workspace_patch
     )
     assert "max(1, min(40, max_num_seqs))" in indexer_workspace_patch
+    assert "self.max_decode_tokens = max(" in indexer_workspace_patch
+    assert "scheduler_config.max_num_seqs * next_n" in indexer_workspace_patch
+    assert "max_cudagraph_capture_size" in indexer_workspace_patch
+    assert "num_decode_tokens <= self.max_decode_tokens" in (
+        indexer_workspace_patch
+    )
 
     vision = (
         ROOT / "overlay/vllm/model_executor/models/deepseek_v4_vision.py"

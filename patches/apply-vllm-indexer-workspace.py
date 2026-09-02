@@ -47,6 +47,43 @@ def main() -> None:
         "    return max_model_len * max(1, min(40, max_num_seqs))\n",
         "concurrency-bounded sparse-indexer gather workspace",
     )
+    replace_once(
+        path,
+        "        self.expanded_block_table_buffer = torch.zeros(\n"
+        "            (scheduler_config.max_num_batched_tokens, block_table_width),\n"
+        "            dtype=torch.int32,\n"
+        "            device=self.device,\n"
+        "        )\n",
+        "        # This table is consumed only by flattened decode rows, never by\n"
+        "        # prefill. Its legal live rows are bounded by request concurrency\n"
+        "        # times the target+draft width, plus CUDA-graph padding. Sizing the\n"
+        "        # row count from max_num_batched_tokens multiplies the long-context\n"
+        "        # block-table width by the 8K prefill budget and wastes hundreds of\n"
+        "        # MiB per target/draft builder.\n"
+        "        self.max_decode_tokens = max(\n"
+        "            scheduler_config.max_num_seqs * next_n,\n"
+        "            self.vllm_config.compilation_config.max_cudagraph_capture_size\n"
+        "            or 0,\n"
+        "        )\n"
+        "        self.expanded_block_table_buffer = torch.zeros(\n"
+        "            (self.max_decode_tokens, block_table_width),\n"
+        "            dtype=torch.int32,\n"
+        "            device=self.device,\n"
+        "        )\n",
+        "decode-only expanded block-table rows",
+    )
+    replace_once(
+        path,
+        "        \"\"\"Prepare native or per-token flattened decode tensors.\"\"\"\n"
+        "        min_decode_len = int(decode_lens_cpu.min().item())\n",
+        "        \"\"\"Prepare native or per-token flattened decode tensors.\"\"\"\n"
+        "        assert num_decode_tokens <= self.max_decode_tokens, (\n"
+        "            num_decode_tokens,\n"
+        "            self.max_decode_tokens,\n"
+        "        )\n"
+        "        min_decode_len = int(decode_lens_cpu.min().item())\n",
+        "flattened decode row bound",
+    )
 
 
 if __name__ == "__main__":
