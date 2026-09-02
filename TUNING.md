@@ -96,7 +96,7 @@ is retained in this repository.
   at 12. Tuple counts and sizes, admission pages, chosen widths, physical block
   stride, and required bytes are logged at startup. On the one-Spark Vision
   EXL3 profile, a 2,048-token scheduler budget and five physical groups require
-  3,670,507,008 bytes for exact 500K admission (7.169 KiB/token). A 14-group
+  3,664,189,440 bytes for exact 500K admission (7.157 KiB/token). A 14-group
   diagnostic reached 6.823 KiB/token but regressed matched C4 decode by 9.8%,
   so the extra 4.8% capacity was rejected. The 2K profile's matched 8K prefill
   improved from 1,272.5 to 1,321.4 tok/s (+3.84%); 32K reached 1,345.1 tok/s.

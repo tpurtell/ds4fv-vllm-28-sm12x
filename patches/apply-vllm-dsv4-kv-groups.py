@@ -90,19 +90,27 @@ def main() -> None:
     )
     best: tuple[int, int, int, list[int], list[int]] | None = None
     for candidate_stride in candidate_strides:
-        tuple_widths = [
+        max_tuple_widths = [
             min(tuple_count, candidate_stride // page_bytes)
             for page_bytes, tuple_count in zip(tuple_bytes, tuple_counts)
         ]
-        if any(width < 1 for width in tuple_widths):
+        if any(width < 1 for width in max_tuple_widths):
             continue
         group_counts = [
             cdiv(tuple_count, width)
-            for tuple_count, width in zip(tuple_counts, tuple_widths)
+            for tuple_count, width in zip(tuple_counts, max_tuple_widths)
         ]
         num_groups = sum(group_counts)
         if num_groups > max_groups:
             continue
+        # Once the group count is known, spread tuples evenly across its
+        # groups. This retains upstream's balanced/interleaved physical layout
+        # (for example, C4 46 -> 23/23 rather than 26/20) without changing the
+        # packed stride or one-request admission bytes.
+        tuple_widths = [
+            cdiv(tuple_count, group_count)
+            for tuple_count, group_count in zip(tuple_counts, group_counts)
+        ]
         block_stride = max(
             width * page_bytes
             for width, page_bytes in zip(tuple_widths, tuple_bytes)
@@ -142,12 +150,11 @@ def main() -> None:
         ]
 
         groups: list[KVCacheGroupSpec] = []
-        for tuple_start in range(0, tuple_count, tuple_width):
+        num_tuple_groups = cdiv(tuple_count, tuple_width)
+        for group_index in range(num_tuple_groups):
             group_layer_names = [
                 layer_name
-                for layer_tuple in layer_tuples[
-                    tuple_start : tuple_start + tuple_width
-                ]
+                for layer_tuple in layer_tuples[group_index::num_tuple_groups]
                 for layer_name in layer_tuple
             ]
             group_layer_specs = {
@@ -171,6 +178,15 @@ def main() -> None:
     ]
     packed_stride = max(
         cast(UniformTypeKVCacheSpecs, group.kv_cache_spec).page_size_bytes
+        for group in kv_cache_groups
+    )
+    # The optimizer scores a family by group_count * max_pages. Recompute the
+    # final number from the actual split groups so partial tail groups and the
+    # startup log use the exact same accounting as admission control below.
+    required_bytes = packed_stride * sum(
+        cast(
+            UniformTypeKVCacheSpecs, group.kv_cache_spec
+        ).max_memory_usage_pages(vllm_config)
         for group in kv_cache_groups
     )
     logger.info(

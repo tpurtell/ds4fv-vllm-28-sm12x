@@ -199,7 +199,9 @@ def main() -> None:
         "candidate_strides = sorted(",
         "block_stride * required_blocks",
         "for index in range(tuple_count)",
-        "for tuple_start in range(0, tuple_count, tuple_width)",
+        "num_tuple_groups = cdiv(tuple_count, tuple_width)",
+        "layer_tuples[group_index::num_tuple_groups]",
+        "required_bytes = packed_stride * sum(",
         '"block_stride=%d bytes, one_request=%d bytes"',
         "block_stride, _ = _get_packed_kv_cache_layout(kv_cache_groups)",
     ):
