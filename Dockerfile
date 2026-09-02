@@ -12,19 +12,6 @@ ARG B12X_VLLM_ADAPTER_BASE=https://raw.githubusercontent.com/local-inference-lab
 ARG RAY_VERSION=2.48.0
 ARG INSTANTTENSOR_VERSION=0.1.9
 ARG VLLM_SITE_PACKAGES=/usr/local/lib/python3.12/dist-packages
-ARG RECIPE_COMMIT=unknown
-
-LABEL org.opencontainers.image.title="DeepSeek V4 Flash/Vision for DGX Spark" \
-      org.opencontainers.image.description="arm64-only vLLM 0.28 runtime for GB10 / SM121" \
-      org.opencontainers.image.source="https://github.com/tpurtell/ds4fv-vllm-28-sm12x" \
-      org.opencontainers.image.revision="${RECIPE_COMMIT}" \
-      org.opencontainers.image.base.digest="sha256:2a7cde230b59f3ce6cab33dd245ba6bee41aa87b38c9fe84f966ff24016813ce" \
-      io.tpurtell.target.arch="linux/arm64" \
-      io.tpurtell.target.cuda.arch="sm_121a" \
-      io.tpurtell.b12x.commit="${B12X_COMMIT}" \
-      io.tpurtell.b12x.vllm-adapter.commit="${B12X_VLLM_ADAPTER_COMMIT}" \
-      io.tpurtell.exl3.source.sha256="209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c" \
-      io.tpurtell.ray.version="${RAY_VERSION}"
 
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
@@ -108,6 +95,21 @@ COPY scripts/release-warmup.py /opt/ds4fv/bin/release-warmup
 COPY scripts/container-healthcheck.py /opt/ds4fv/bin/container-healthcheck.py
 COPY tests/spark_exl3_no_gpu_smoke.py /opt/ds4fv/tests/spark_exl3_no_gpu_smoke.py
 RUN chmod 0755 /opt/ds4fv/bin/start-native /opt/ds4fv/bin/release-warmup
+
+# Keep the recipe identity in a metadata-only tail layer so changing the
+# commit does not invalidate the pinned dependency and source-patch layers.
+ARG RECIPE_COMMIT=unknown
+LABEL org.opencontainers.image.title="DeepSeek V4 Flash/Vision for DGX Spark" \
+      org.opencontainers.image.description="arm64-only vLLM 0.28 runtime for GB10 / SM121" \
+      org.opencontainers.image.source="https://github.com/tpurtell/ds4fv-vllm-28-sm12x" \
+      org.opencontainers.image.revision="${RECIPE_COMMIT}" \
+      org.opencontainers.image.base.digest="sha256:2a7cde230b59f3ce6cab33dd245ba6bee41aa87b38c9fe84f966ff24016813ce" \
+      io.tpurtell.target.arch="linux/arm64" \
+      io.tpurtell.target.cuda.arch="sm_121a" \
+      io.tpurtell.b12x.commit="${B12X_COMMIT}" \
+      io.tpurtell.b12x.vllm-adapter.commit="${B12X_VLLM_ADAPTER_COMMIT}" \
+      io.tpurtell.exl3.source.sha256="209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c" \
+      io.tpurtell.ray.version="${RAY_VERSION}"
 
 ENV PYTHONPATH=/opt/b12x:/usr/local/lib/python3.12/dist-packages \
     PYTHONUNBUFFERED=1 \
