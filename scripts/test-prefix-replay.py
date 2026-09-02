@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Replay one exact 128K EXL3 prompt and verify real prefix-cache hits."""
+"""Replay one exact 128K prompt and verify real prefix-cache hits."""
 
 from __future__ import annotations
 
@@ -39,6 +39,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
     parser.add_argument("--model", required=True)
+    parser.add_argument(
+        "--role", required=True, choices=("native-vision", "exl3", "exl3-vision")
+    )
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--recipe-commit", required=True)
     parser.add_argument("--tokens", type=int, default=128000)
@@ -87,7 +90,7 @@ def main() -> None:
         "schema": "ds4fv-prefix-replay.v1",
         "passed": all(item["passed"] for item in passes) and after_hits > before_hits,
         "provenance": {
-            "role": "exl3",
+            "role": args.role,
             "image_id": args.image_id,
             "recipe_commit": args.recipe_commit,
             "model": args.model,

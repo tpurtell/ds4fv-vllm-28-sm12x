@@ -8,7 +8,7 @@ container_name=${CONTAINER_NAME:-ds4fv-exl3}
 hf_cache=${HF_CACHE:-/home/tj/.cache/huggingface}
 model_repo=${MODEL_REPO:-}
 model_revision=${MODEL_REVISION:-}
-model_kind=${MODEL_KIND:-text}
+model_kind=${MODEL_KIND:-vision}
 gpu_memory_utilization=${GPU_MEMORY_UTILIZATION:-}
 max_model_len=${MAX_MODEL_LEN:-}
 max_num_batched_tokens=${MAX_NUM_BATCHED_TOKENS:-}
@@ -21,11 +21,7 @@ if [[ -z "${gpu_memory_utilization}" ]]; then
   fi
 fi
 if [[ -z "${max_model_len}" ]]; then
-  if [[ "${model_kind}" == vision ]]; then
-    max_model_len=500000
-  else
-    max_model_len=131072
-  fi
+  max_model_len=500000
 fi
 if [[ -z "${max_num_batched_tokens}" ]]; then
   if [[ "${model_kind}" == vision ]]; then

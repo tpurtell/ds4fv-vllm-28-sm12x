@@ -132,6 +132,7 @@ def main() -> None:
         "benchmark-content-types.py",
         "test-tool-call.py",
         "test-native-vision-vllm.py",
+        "test-vision-prefix-replay.py",
         "test-long-context.py",
         "test-prefix-replay.py",
         "soak-api.py",
@@ -140,7 +141,8 @@ def main() -> None:
     assert "docker run" not in runner
     assert "vllm serve" not in runner
     assert '"${role}" == native-vision || "${role}" == exl3-vision' in runner
-    assert '"${role}" == exl3' in runner
+    assert '--role "${role}"' in runner
+    assert '"kv_cache_dtype": kv_cache_dtype' in runner
     assert 'content_contract_floor=38' in runner
     assert 'content_contract_floor=34' in runner
     assert '--minimum-contract-passes "${content_contract_floor}"' in runner
@@ -247,6 +249,19 @@ def main() -> None:
     assert "gpu_memory_default=0.86" in launcher
     assert "max_model_len_default=500000" in launcher
     assert "max_num_batched_tokens_default=2048" in launcher
+    assert 'role=${DS4FV_ROLE:-exl3}' in launcher
+    assert 'local model_kind=${MODEL_KIND:-vision}' in launcher
+    assert '--decode-context-parallel-size "${DCP_SIZE:-2}"' in launcher
+    assert '--max-model-len "${MAX_MODEL_LEN:-500000}"' in launcher
+    assert 'if [[ "${model_kind}" == vision ||' not in launcher
+    assert launcher.count('if [[ "${ENABLE_PREFIX_CACHING:-1}" == 1 ]]') == 2
+
+    two_spark_launcher = (ROOT / "scripts/launch-two-spark.sh").read_text()
+    assert '-e MODEL_KIND="${MODEL_KIND:-vision}"' in two_spark_launcher
+    assert '-e DCP_SIZE="${DCP_SIZE:-2}"' in two_spark_launcher
+    assert '-e MAX_MODEL_LEN="${MAX_MODEL_LEN:-500000}"' in two_spark_launcher
+    assert 'model_kind=${MODEL_KIND:-vision}' in one_spark_launcher
+    assert "max_model_len=500000" in one_spark_launcher
 
     audit = (ROOT / "scripts/audit-startup-jit.py").read_text()
     assert "ds4fv-release-startup-jit-audit.v1" in audit

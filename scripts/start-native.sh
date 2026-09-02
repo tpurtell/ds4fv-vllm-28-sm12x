@@ -19,7 +19,7 @@ if capability != (12, 1):
     raise SystemExit(f"Expected DGX Spark SM121, found compute capability {capability}")
 PY
 
-role=${DS4FV_ROLE:-head}
+role=${DS4FV_ROLE:-exl3}
 if [[ $# -gt 0 ]]; then
   case "$1" in
     head|ray-head|ray-worker|worker|serve|exl3)
@@ -176,7 +176,7 @@ PY
 serve_model() {
   check_fabric_env
 
-  local model_kind=${MODEL_KIND:-text}
+  local model_kind=${MODEL_KIND:-vision}
   local dspark_default_tokens=5
   local moe_mode=${MOE_MODE:-tp}
   local model_repo model_revision served_name
@@ -226,10 +226,10 @@ serve_model() {
     model_args=("${model_repo}" --revision "${model_revision}")
   fi
 
-  if [[ "${model_kind}" == vision || "${ENABLE_PREFIX_CACHING:-1}" != 1 ]]; then
-    prefix_args=(--no-enable-prefix-caching)
-  else
+  if [[ "${ENABLE_PREFIX_CACHING:-1}" == 1 ]]; then
     prefix_args=(--enable-prefix-caching)
+  else
+    prefix_args=(--no-enable-prefix-caching)
   fi
   configure_dspark_args speculative_args "${dspark_default_tokens}"
 
@@ -239,11 +239,12 @@ serve_model() {
     --port "${API_PORT:-8000}" \
     --distributed-executor-backend ray \
     --tensor-parallel-size "${TP_SIZE:-2}" \
+    --decode-context-parallel-size "${DCP_SIZE:-2}" \
     "${moe_args[@]}" \
     --moe-backend b12x \
     --linear-backend b12x \
     --disable-custom-all-reduce \
-    --max-model-len "${MAX_MODEL_LEN:-131072}" \
+    --max-model-len "${MAX_MODEL_LEN:-500000}" \
     --max-num-seqs "${MAX_NUM_SEQS:-4}" \
     --max-num-batched-tokens "${MAX_NUM_BATCHED_TOKENS:-8192}" \
     --gpu-memory-utilization "${GPU_MEMORY_UTILIZATION:-0.85}" \
@@ -260,10 +261,10 @@ serve_model() {
 }
 
 serve_exl3() {
-  local model_kind=${MODEL_KIND:-text}
+  local model_kind=${MODEL_KIND:-vision}
   local dspark_default_tokens=5
   local gpu_memory_default=0.85
-  local max_model_len_default=131072
+  local max_model_len_default=500000
   local max_num_batched_tokens_default=8192
   local model_repo model_revision served_name model_ref warmup_role
   local -a revision_args=() prefix_args=() speculative_args=() vision_args=()
@@ -303,10 +304,10 @@ serve_exl3() {
     model_ref=${model_repo}
     revision_args=(--revision "${model_revision}")
   fi
-  if [[ "${model_kind}" == vision || "${ENABLE_PREFIX_CACHING:-1}" != 1 ]]; then
-    prefix_args=(--no-enable-prefix-caching)
-  else
+  if [[ "${ENABLE_PREFIX_CACHING:-1}" == 1 ]]; then
     prefix_args=(--enable-prefix-caching)
+  else
+    prefix_args=(--no-enable-prefix-caching)
   fi
   configure_dspark_args speculative_args "${dspark_default_tokens}"
 

@@ -11,6 +11,7 @@ image_id=${IMAGE_ID:?IMAGE_ID must be the frozen sha256 image ID}
 recipe_commit=${RECIPE_COMMIT:-$(git -C "${script_dir}/.." rev-parse HEAD)}
 stamp=${BENCHMARK_STAMP:-$(date -u +%Y%m%dT%H%M%SZ)}
 output_root=${OUTPUT_ROOT:-${script_dir}/../benchmarks/${stamp}-${role}}
+kv_cache_dtype=${KV_CACHE_DTYPE:-fp8}
 
 case "${role}" in
   native-vision)
@@ -46,13 +47,23 @@ mkdir -p "${output_root}"
 
 python3 - "${output_root}/manifest.json" "${role}" "${base_url}" "${model}" \
   "${image_id}" "${recipe_commit}" "${dspark_tokens}" \
-  "${content_contract_floor}" <<'PY'
+  "${content_contract_floor}" "${kv_cache_dtype}" <<'PY'
 import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-path, role, base_url, model, image_id, commit, tokens, contract_floor = sys.argv[1:]
+(
+    path,
+    role,
+    base_url,
+    model,
+    image_id,
+    commit,
+    tokens,
+    contract_floor,
+    kv_cache_dtype,
+) = sys.argv[1:]
 Path(path).write_text(json.dumps({
     "schema": "ds4fv-release-suite-manifest.v1",
     "started_utc": datetime.now(timezone.utc).isoformat(),
@@ -65,6 +76,7 @@ Path(path).write_text(json.dumps({
     "dspark_policy": "fixed",
     "draft_sample_method": "greedy",
     "content_contract_floor": int(contract_floor),
+    "kv_cache_dtype": kv_cache_dtype,
 }, indent=2) + "\n")
 PY
 
@@ -108,6 +120,14 @@ if [[ "${role}" == native-vision || "${role}" == exl3-vision ]]; then
     --reject-image-count 17 \
     --image-limit 16 \
     --output "${output_root}/native-vision.json"
+
+  python3 "${script_dir}/test-vision-prefix-replay.py" \
+    --base-url "${base_url}" \
+    --model "${model}" \
+    --role "${role}" \
+    --image-id "${image_id}" \
+    --recipe-commit "${recipe_commit}" \
+    --output "${output_root}/vision-prefix-replay.json"
 fi
 
 python3 "${script_dir}/test-long-context.py" \
@@ -115,15 +135,14 @@ python3 "${script_dir}/test-long-context.py" \
   --tokens 128000 \
   --output "${output_root}/long-context-128k.json"
 
-if [[ "${role}" == exl3 ]]; then
-  python3 "${script_dir}/test-prefix-replay.py" \
-    --base-url "${base_url}" \
-    --model "${model}" \
-    --image-id "${image_id}" \
-    --recipe-commit "${recipe_commit}" \
-    --tokens 128000 \
-    --output "${output_root}/prefix-replay-128k.json"
-fi
+python3 "${script_dir}/test-prefix-replay.py" \
+  --base-url "${base_url}" \
+  --model "${model}" \
+  --role "${role}" \
+  --image-id "${image_id}" \
+  --recipe-commit "${recipe_commit}" \
+  --tokens 128000 \
+  --output "${output_root}/prefix-replay-128k.json"
 
 python3 "${script_dir}/soak-api.py" \
   "${common[@]}" \

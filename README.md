@@ -2,9 +2,10 @@
 
 This repository builds an **arm64-only, NVIDIA GB10 / SM121** vLLM image for
 `deepseek-ai/DeepSeek-V4-Flash-0731` and
-`deepseek-ai/DeepSeek-V4-Flash-Vision-Exp`. Native checkpoints are served over
-two DGX Sparks with tensor parallelism; an amd64 image is intentionally out of
-scope until the EXL3 quantization work is complete.
+`deepseek-ai/DeepSeek-V4-Flash-Vision-Exp`. The no-option serving profile is
+the one-Spark Vision EXL3 K2.2/D2 checkpoint with FP8 KV cache. Native
+checkpoints use two DGX Sparks; an amd64 image is intentionally out of scope
+until the EXL3 quantization work is complete.
 
 The current milestone pins vLLM 0.28.0 and the current `tpurtell/sparkinfer-glmrt`
 B12x tree. Vision support is implemented in-recipe because the experimental
@@ -58,10 +59,10 @@ Check the fabric without starting containers:
 scripts/launch-two-spark.sh --check-only
 ```
 
-Launch the pinned native text checkpoint with TP2 experts:
+Launch the pinned native Vision checkpoint with TP2 and decode-context
+parallelism across both Sparks:
 
 ```bash
-MODEL_KIND=text \
 DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:native-dev \
 scripts/launch-two-spark.sh
 ```
@@ -70,16 +71,20 @@ Set `MOE_MODE=ep` to keep dense layers TP2 while distributing experts EP2.
 It is a qualified option, but TP2 is the native default because EP2 was slower
 on the retained concurrency-one prefill baseline. Vision uses the
 checkpoint-specific architecture, 128-token text SWA, a
-512-token physical image cache span, no multimodal processor cache, and no
-prefix cache, with a hard 16-image request limit:
+512-token physical image cache span, no multimodal processor cache, prefix
+caching, and a hard 16-image request limit. vLLM includes each multimodal
+feature identifier and its block-relative position in the prefix hash, and the
+release suite verifies both exact-image reuse and changed-image isolation:
 
 ```bash
-MODEL_KIND=vision MOE_MODE=tp \
+MOE_MODE=tp \
 DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:native-dev \
 scripts/launch-two-spark.sh
 ```
 
-The launcher replaces only its two exact named containers
+The two-Spark profile defaults to `MAX_MODEL_LEN=500000` and `DCP_SIZE=2`;
+set `DCP_SIZE=1` only for a comparison run. The launcher replaces only its two
+exact named containers
 (`ds4fv-native-head` and `ds4fv-native-worker` by default). Fabric merge and
 cross-NIC policies remain environment overrides, but the defaults are now
 qualified: merged dual rail with `NCCL_CROSS_NIC=2` was 4.84% faster than one
@@ -115,9 +120,11 @@ structured/tool parsing, and (for Vision) 1/4/16-image paths. Set
 release candidate. Triton, TileLang, B12x, and FlashInfer JIT caches persist on
 the mounted Hugging Face cache volume.
 
-## One-Spark EXL3 launch
+## Default one-Spark Vision EXL3 launch
 
-The mixed K2/K3 EXL3 checkpoint fits on one Spark and uses the same image:
+The new mixed Vision K2.2/D2 checkpoint fits on one Spark and uses the same
+image. This is the recipe's no-option model profile; FP8 KV, 500K maximum model
+length, prefix caching, and greedy K3 drafting are the defaults:
 
 ```bash
 SPARK_HOST=kiwi \
@@ -125,33 +132,19 @@ DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:native-dev \
 scripts/launch-one-spark-exl3.sh
 ```
 
-Its default is native DSpark K5 with greedy drafting. The target-only and
-explicit tuning controls above apply to this launcher as well. On the matched
-one-Spark 256-input/128-output gate this profile reached 34.59 tok/s, 21.03%
-above the older probabilistic-K5 result and 1.88% above vLLM's stock adaptive
-K5; the [matched content qualification](validation/2026-09-02-exl3-greedy-adaptive.md)
-also favored fixed K5 by 4.85%.
-
-The Vision K2.2/D2-v1 profile is selected explicitly and defaults to fixed
-greedy K3, a 0.86 GPU-memory reservation for its 500K KV cache, disables prefix
-caching, injects the checkpoint's missing Vision configuration, and gates
-readiness on 1/4/16-image requests:
-
-```bash
-SPARK_HOST=dodo \
-MODEL_KIND=vision \
-DS4FV_IMAGE=ds4fv-vllm-28-sm12x:prod-candidate \
-scripts/launch-one-spark-exl3.sh
-```
-
 It serves as `deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1` by default.
+The older text K2.1 checkpoint remains available with `MODEL_KIND=text`, but it
+is not part of the final performance/quality evidence matrix. NVFP4 DS-MLA is
+an opt-in cache format under matched qualification for the primary Vision
+profile; FP8 remains the production default until that capacity, quality, and
+performance gate passes.
 
 ## Release benchmarks
 
 The frozen-image harness is documented in
-[benchmarks/README.md](benchmarks/README.md). It runs separate native Vision
-TP2, one-Spark text EXL3, and one-Spark Vision EXL3 suites with code-agent
-decode/concurrency and context
+[benchmarks/README.md](benchmarks/README.md). It measures native Vision
+TP2+DCP2 with FP8 and the primary one-Spark Vision EXL3 model with matched FP8
+and NVFP4 runs. The suites cover code-agent decode/concurrency and context
 depth curves, unique 8K--128K prefill, the weighted semantic/structured blend,
 tool use, 128K retrieval, role-specific Vision or prefix-cache checks, and a
 post-long-context C4 soak; full runs begin only after both roles use one exact

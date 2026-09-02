@@ -241,8 +241,10 @@ is retained in this repository.
   `8aab722f04f7e8963af83de5acb16138474e0228`, restores its missing Vision
   architecture/dimensions at launch, uses the public one-grid B12x mixed-route
   path for its K2/K3 target layers, retains uniform-K2 draft layers, and
-  defaults to fixed greedy K3 with prefix caching off. Its first live startup
-  also caught the checkpoint's `hash_moe`/`moe` values at Transformers' strict
+  defaults to fixed greedy K3 with FP8 KV, prefix caching, and a 500K model
+  length. Exact multimodal replay and changed-image isolation are now hard
+  release gates rather than disabling APC for every Vision request. Its first
+  live startup also caught the checkpoint's `hash_moe`/`moe` values at Transformers' strict
   layer-type boundary; those values are now registered through vLLM's existing
   per-model compatibility table rather than discarded. The compatibility
   helper is extended for the pinned base's newer split attention/MLP validator
@@ -264,5 +266,5 @@ is retained in this repository.
   `validation/2026-09-02-native-vision-k3-reliability.md`.
 - Freeze one committed production-candidate digest with zero post-ready JIT,
   then run the separate
-  native Vision TP2, one-Spark text EXL3, and one-Spark Vision EXL3 release
+  native Vision FP8 TP2+DCP2 plus matched one-Spark Vision EXL3 FP8/NVFP4 release
   suites against that exact image.
