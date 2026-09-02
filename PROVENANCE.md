@@ -61,6 +61,9 @@ The Vision EXL3 derivative retains that incomplete base architecture metadata,
 so its first-class launch profile applies the same architecture override plus
 the pinned native Vision dimensions. Its 43 target layers use projection-mixed
 K2/K3 Trellis routes; the three DSpark draft layers remain uniform K2.
+The profile also preserves the checkpoint's `hash_moe`/`moe` layer taxonomy by
+registering those DeepSeek-V4-specific values with Transformers' strict layer
+type validator.
 
 The later upstream revision `31ea11185e11ccafad1c385104188a9e3b648ad6`
 changes only README/evaluation metadata relative to the pinned cached payload.

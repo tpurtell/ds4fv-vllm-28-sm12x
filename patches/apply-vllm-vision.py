@@ -37,6 +37,19 @@ def patch_registry(root: Path) -> None:
 
 
 def patch_model_config(root: Path) -> None:
+    path = root / "transformers_utils/config.py"
+    replace_once(
+        path,
+        '_PATCH_HF_ALLOWED_LAYER_TYPES: dict[str, tuple[str, ...]] = {\n'
+        '    "glm_moe_dsa": ("deepseek_sparse_attention",),\n'
+        '}\n',
+        '_PATCH_HF_ALLOWED_LAYER_TYPES: dict[str, tuple[str, ...]] = {\n'
+        '    "deepseek_v4": ("hash_moe", "moe"),\n'
+        '    "glm_moe_dsa": ("deepseek_sparse_attention",),\n'
+        '}\n',
+        "DeepSeek-V4 checkpoint layer types",
+    )
+
     path = root / "model_executor/models/config.py"
     replace_once(
         path,

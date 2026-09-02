@@ -6,10 +6,9 @@ from __future__ import annotations
 import inspect
 import os
 
-from transformers import AutoConfig
-
 from vllm.model_executor.layers.quantization import get_quantization_config
 from vllm.model_executor.layers.quantization.exl3 import Exl3Config, Exl3MoEMethod
+from vllm.transformers_utils.config import get_config
 from vllm.utils.flashinfer import has_flashinfer_sparse_mla_sm120_config
 from flashinfer.jit.mla import gen_sparse_mla_sm120_module
 
@@ -19,7 +18,7 @@ if not model_path:
     raise SystemExit("EXL3_MODEL_PATH must point to a pinned EXL3 snapshot")
 
 assert get_quantization_config("exl3") is Exl3Config
-hf_config = AutoConfig.from_pretrained(model_path)
+hf_config = get_config(model_path, trust_remote_code=False)
 quant_config = Exl3Config.from_config(dict(hf_config.quantization_config))
 quant_config.maybe_update_config(model_path, hf_config=hf_config)
 
@@ -42,6 +41,11 @@ profile_by_totals = {
 }
 profile = profile_by_totals.get(projection_k3_totals)
 assert profile is not None, projection_k3_totals
+
+declared_layer_types = getattr(hf_config, "mlp_layer_types", None)
+if profile == "vision-k2.2-d2-v1":
+    assert declared_layer_types[:3] == ["hash_moe"] * 3
+    assert declared_layer_types[3:] == ["moe"] * 40
 
 for layer_index, rates in quant_config.standard_projection_bits_by_layer.items():
     expected_bits = (

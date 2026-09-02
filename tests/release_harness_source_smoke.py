@@ -175,6 +175,9 @@ def main() -> None:
     assert "patch_batch = torch.stack(" in vision
     assert "q.transpose(-3, -2)" in vision
 
+    vision_patch = (ROOT / "patches/apply-vllm-vision.py").read_text()
+    assert '"deepseek_v4": ("hash_moe", "moe")' in vision_patch
+
     for name in ("launch-two-spark.sh", "launch-one-spark-exl3.sh"):
         host_launcher = (ROOT / "scripts" / name).read_text()
         for fragment in (

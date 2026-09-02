@@ -211,7 +211,10 @@ is retained in this repository.
   `8aab722f04f7e8963af83de5acb16138474e0228`, restores its missing Vision
   architecture/dimensions at launch, uses the public one-grid B12x mixed-route
   path for its K2/K3 target layers, retains uniform-K2 draft layers, and
-  defaults to fixed greedy K3 with prefix caching off.
+  defaults to fixed greedy K3 with prefix caching off. Its first live startup
+  also caught the checkpoint's `hash_moe`/`moe` values at Transformers' strict
+  layer-type boundary; those values are now registered through vLLM's existing
+  per-model compatibility table rather than discarded.
 - **Passed:** Source-check and minimally exercise the frozen-image benchmark
   clients without running a premature full suite; the development-only smoke
   is retained in `validation/2026-09-02-release-harness-smoke.md`.
