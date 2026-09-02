@@ -94,7 +94,11 @@ is retained in this repository.
   A bounded search now chooses a byte-balanced tuple width per cache family,
   minimizing exact one-request admission bytes while capping scheduler groups
   at 48. Tuple counts and sizes, admission pages, chosen widths, physical block
-  stride, and required bytes are logged at startup.
+  stride, and required bytes are logged at startup. On the one-Spark Vision
+  EXL3 profile, a 2,048-token scheduler budget reduced exact 500K admission to
+  3,493,473,984 bytes (6.823 KiB/token), exposed 12.09 GiB for KV, and reported
+  3.72x 500K concurrency. Matched 8K prefill improved from 1,272.5 to 1,321.4
+  tok/s (+3.84%); 32K reached 1,345.1 tok/s.
 
 - **Two-rail networking:** Each Spark exposes two active RoCEv2 rails, with GID
   index 3 on `rocep1s0f0/1` and `roceP2p1s0f0/1`. On the same five warmed text

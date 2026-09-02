@@ -17,11 +17,14 @@ or GPU code.
 | `exl3` | one SM121 Spark, mixed K2/K3 | fixed greedy K5 | on | n/a |
 | `exl3-vision` | one SM121 Spark, mixed K2/K3 | fixed greedy K3 | off | 16 images |
 
-Both profiles use FP8 KV cache, a maximum length of 131,072, four scheduler
-slots, an 8,192-token batch budget, and the stock split sparse-MLA decode path.
-The opt-in B12x compressed-MLA experiment and stock adaptive verifier are off.
-The service must receive no unrelated traffic during a suite because DSpark
-acceptance is read from process-wide Prometheus counter deltas.
+All profiles use FP8 KV cache, four scheduler slots, and the stock split
+sparse-MLA decode path. Native Vision and text EXL3 retain a 131,072 maximum
+length and 8,192-token batch budget. Vision EXL3 uses a 500,000 maximum length
+and 2,048-token budget; the smaller chunk bounds transient compressor state and
+measured slightly faster rather than trading away prefill. The opt-in B12x
+compressed-MLA experiment and stock adaptive verifier are off. The service
+must receive no unrelated traffic during a suite because DSpark acceptance is
+read from process-wide Prometheus counter deltas.
 
 ## HTTP suite
 

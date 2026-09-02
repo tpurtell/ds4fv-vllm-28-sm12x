@@ -10,12 +10,28 @@ model_repo=${MODEL_REPO:-}
 model_revision=${MODEL_REVISION:-}
 model_kind=${MODEL_KIND:-text}
 gpu_memory_utilization=${GPU_MEMORY_UTILIZATION:-}
+max_model_len=${MAX_MODEL_LEN:-}
+max_num_batched_tokens=${MAX_NUM_BATCHED_TOKENS:-}
 
 if [[ -z "${gpu_memory_utilization}" ]]; then
   if [[ "${model_kind}" == vision ]]; then
     gpu_memory_utilization=0.86
   else
     gpu_memory_utilization=0.85
+  fi
+fi
+if [[ -z "${max_model_len}" ]]; then
+  if [[ "${model_kind}" == vision ]]; then
+    max_model_len=500000
+  else
+    max_model_len=131072
+  fi
+fi
+if [[ -z "${max_num_batched_tokens}" ]]; then
+  if [[ "${model_kind}" == vision ]]; then
+    max_num_batched_tokens=2048
+  else
+    max_num_batched_tokens=8192
   fi
 fi
 
@@ -73,9 +89,9 @@ remote "${spark_host}" docker run -d \
   -e DS4FV_STARTUP_WARMUP_TIMEOUT_S="${DS4FV_STARTUP_WARMUP_TIMEOUT_S:-1800}" \
   -e VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS="${VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS:-1800}" \
   -e VLLM_USE_BREAKABLE_CUDAGRAPH="${VLLM_USE_BREAKABLE_CUDAGRAPH:-0}" \
-  -e MAX_MODEL_LEN="${MAX_MODEL_LEN:-131072}" \
+  -e MAX_MODEL_LEN="${max_model_len}" \
   -e MAX_NUM_SEQS="${MAX_NUM_SEQS:-4}" \
-  -e MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-8192}" \
+  -e MAX_NUM_BATCHED_TOKENS="${max_num_batched_tokens}" \
   -e GPU_MEMORY_UTILIZATION="${gpu_memory_utilization}" \
   -e KV_CACHE_DTYPE="${KV_CACHE_DTYPE:-fp8}" \
   -e ENABLE_PREFIX_CACHING="${ENABLE_PREFIX_CACHING:-1}" \

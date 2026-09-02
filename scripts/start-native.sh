@@ -263,6 +263,8 @@ serve_exl3() {
   local model_kind=${MODEL_KIND:-text}
   local dspark_default_tokens=5
   local gpu_memory_default=0.85
+  local max_model_len_default=131072
+  local max_num_batched_tokens_default=8192
   local model_repo model_revision served_name model_ref warmup_role
   local -a revision_args=() prefix_args=() speculative_args=() vision_args=()
   case "${model_kind}" in
@@ -279,6 +281,8 @@ serve_exl3() {
       warmup_role=exl3-vision
       dspark_default_tokens=3
       gpu_memory_default=0.86
+      max_model_len_default=500000
+      max_num_batched_tokens_default=2048
       vision_args=(
         --hf-overrides
         '{"architectures":["DeepseekV4VisionForConditionalGeneration"],"is_mm_prefix_lm":true,"vision_text_sliding_window":128,"sliding_window":512,"vision_n_layers":32,"vision_dim":1024,"vision_n_heads":16,"vision_inter_dim":2816,"vision_patch_size":14,"vision_rope_theta":10000.0,"vision_downsample_ratio":3,"vision_max_n_token":384,"vision_min_pixels":147456,"vision_max_wh_ratio":8}'
@@ -318,9 +322,9 @@ serve_exl3() {
     --pipeline-parallel-size 1 \
     --moe-backend b12x \
     --linear-backend b12x \
-    --max-model-len "${MAX_MODEL_LEN:-131072}" \
+    --max-model-len "${MAX_MODEL_LEN:-${max_model_len_default}}" \
     --max-num-seqs "${MAX_NUM_SEQS:-4}" \
-    --max-num-batched-tokens "${MAX_NUM_BATCHED_TOKENS:-8192}" \
+    --max-num-batched-tokens "${MAX_NUM_BATCHED_TOKENS:-${max_num_batched_tokens_default}}" \
     --gpu-memory-utilization "${GPU_MEMORY_UTILIZATION:-${gpu_memory_default}}" \
     --kv-cache-dtype "${KV_CACHE_DTYPE:-fp8}" \
     --tokenizer-mode deepseek_v4 \
