@@ -86,6 +86,9 @@ def main() -> None:
         ]
     )
     assert summary["quality_contract_passed"]
+    assert not summary["structured_contract_passed"]
+    assert summary["structured_contract_passes"] == 0
+    assert summary["structured_contract_total"] == 0
     assert summary["orchid_contract_passed"]
 
     launcher = (ROOT / "scripts/start-native.sh").read_text()
@@ -138,6 +141,9 @@ def main() -> None:
     assert "vllm serve" not in runner
     assert '"${role}" == native-vision || "${role}" == exl3-vision' in runner
     assert '"${role}" == exl3' in runner
+    assert 'content_contract_floor=38' in runner
+    assert 'content_contract_floor=34' in runner
+    assert '--minimum-contract-passes "${content_contract_floor}"' in runner
 
     for fragment in (
         "DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1",

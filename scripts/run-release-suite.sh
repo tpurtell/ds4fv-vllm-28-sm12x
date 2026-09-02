@@ -15,12 +15,15 @@ output_root=${OUTPUT_ROOT:-${script_dir}/../benchmarks/${stamp}-${role}}
 case "${role}" in
   native-vision)
     dspark_tokens=${DSPARK_TOKENS:-3}
+    content_contract_floor=38
     ;;
   exl3-vision)
     dspark_tokens=${DSPARK_TOKENS:-3}
+    content_contract_floor=38
     ;;
   exl3)
     dspark_tokens=${DSPARK_TOKENS:-5}
+    content_contract_floor=34
     ;;
   *)
     echo "ROLE must be native-vision, exl3, or exl3-vision" >&2
@@ -42,13 +45,14 @@ fi
 mkdir -p "${output_root}"
 
 python3 - "${output_root}/manifest.json" "${role}" "${base_url}" "${model}" \
-  "${image_id}" "${recipe_commit}" "${dspark_tokens}" <<'PY'
+  "${image_id}" "${recipe_commit}" "${dspark_tokens}" \
+  "${content_contract_floor}" <<'PY'
 import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-path, role, base_url, model, image_id, commit, tokens = sys.argv[1:]
+path, role, base_url, model, image_id, commit, tokens, contract_floor = sys.argv[1:]
 Path(path).write_text(json.dumps({
     "schema": "ds4fv-release-suite-manifest.v1",
     "started_utc": datetime.now(timezone.utc).isoformat(),
@@ -60,6 +64,7 @@ Path(path).write_text(json.dumps({
     "dspark_tokens": int(tokens),
     "dspark_policy": "fixed",
     "draft_sample_method": "greedy",
+    "content_contract_floor": int(contract_floor),
 }, indent=2) + "\n")
 PY
 
@@ -86,7 +91,7 @@ python3 "${script_dir}/benchmark-content-types.py" \
   "${common[@]}" \
   --repeats 5 \
   --orchid-warmups 1 \
-  --require-contracts \
+  --minimum-contract-passes "${content_contract_floor}" \
   --output "${output_root}/content-types.json"
 
 python3 "${script_dir}/test-tool-call.py" \

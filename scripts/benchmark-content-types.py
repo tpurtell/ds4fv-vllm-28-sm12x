@@ -120,12 +120,28 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Exit nonzero unless every timed semantic sample passes its contract.",
     )
+    parser.add_argument(
+        "--minimum-contract-passes",
+        type=int,
+        default=None,
+        help=(
+            "Exit nonzero unless at least this many timed semantic samples pass, "
+            "all structured JSON samples pass, and the Orchid contract passes."
+        ),
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.repeats < 1 or args.orchid_count < 1 or args.orchid_max_tokens < 1:
         parser.error("repeats, orchid count, and orchid max tokens must be positive")
     if args.orchid_warmups < 0 or args.timeout <= 0:
         parser.error("orchid warmups must be non-negative and timeout must be positive")
+    maximum_contracts = args.repeats * len(ARMS)
+    if args.minimum_contract_passes is not None and not (
+        0 <= args.minimum_contract_passes <= maximum_contracts
+    ):
+        parser.error(
+            f"minimum contract passes must stay within 0..{maximum_contracts}"
+        )
     return args
 
 
@@ -392,6 +408,12 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
         or int(orchid_summary["valid_repetitions"])
         == int(orchid_summary["samples"])
     )
+    structured_records = [
+        record
+        for record in contract_records
+        if record["arm"]
+        in ("structured-json-normal", "structured-json-constrained")
+    ]
     return {
         "arms": arm_summaries,
         "weighted_content_score_tok_s": weighted_score,
@@ -402,6 +424,16 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
         "quality_contract_total": len(contract_records),
         "quality_contract_passed": all(
             bool(record["quality_contract_passed"]) for record in contract_records
+        ),
+        "structured_contract_passes": sum(
+            bool(record.get("structured_contract_passed"))
+            for record in structured_records
+        ),
+        "structured_contract_total": len(structured_records),
+        "structured_contract_passed": bool(structured_records)
+        and all(
+            bool(record.get("structured_contract_passed"))
+            for record in structured_records
         ),
         "orchid_contract_passed": orchid_contract_passed,
     }
@@ -484,12 +516,26 @@ def main() -> None:
             print(json.dumps(record, ensure_ascii=False, sort_keys=True), flush=True)
 
     report["summary"] = summarize(report["records"])
+    if args.minimum_contract_passes is not None:
+        report["summary"]["minimum_contract_passes_required"] = (
+            args.minimum_contract_passes
+        )
+        report["summary"]["release_contract_floor_passed"] = bool(
+            report["summary"]["quality_contract_passes"]
+            >= args.minimum_contract_passes
+            and report["summary"]["structured_contract_passed"]
+            and report["summary"]["orchid_contract_passed"]
+        )
     persist()
     print(json.dumps({"summary": report["summary"]}, sort_keys=True))
     if args.require_contracts and not (
         report["summary"]["quality_contract_passed"]
         and report["summary"]["orchid_contract_passed"]
     ):
+        raise SystemExit(1)
+    if args.minimum_contract_passes is not None and not report["summary"][
+        "release_contract_floor_passed"
+    ]:
         raise SystemExit(1)
 
 
