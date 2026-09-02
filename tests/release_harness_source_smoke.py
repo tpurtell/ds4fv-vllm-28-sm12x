@@ -198,6 +198,7 @@ def main() -> None:
         "max_groups = 5",
         "candidate_strides = sorted(",
         "block_stride * required_blocks",
+        "if tuple_width >= grouped_spec.get_num_layer_tuples()",
         "for index in range(tuple_count)",
         "num_tuple_groups = cdiv(tuple_count, tuple_width)",
         "layer_tuples[group_index::num_tuple_groups]",

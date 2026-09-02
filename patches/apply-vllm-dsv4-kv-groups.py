@@ -136,6 +136,18 @@ def main() -> None:
         grouped_spec: UniformTypeKVCacheSpecs,
         tuple_width: int,
     ) -> list[KVCacheGroupSpec]:
+        # Preserve upstream's original layer order when this family stays in a
+        # single group. Cache binding and native Vision's model-specific layer
+        # mapping both consume that order; rebuilding an equivalent spec in
+        # tuple order is not semantically interchangeable for those callers.
+        if tuple_width >= grouped_spec.get_num_layer_tuples():
+            return [
+                KVCacheGroupSpec(
+                    layer_names=list(grouped_spec.kv_cache_specs.keys()),
+                    kv_cache_spec=grouped_spec,
+                )
+            ]
+
         layers_per_size: dict[int, list[str]] = defaultdict(list)
         for layer_name, layer_spec in grouped_spec.kv_cache_specs.items():
             layers_per_size[layer_spec.page_size_bytes].append(layer_name)

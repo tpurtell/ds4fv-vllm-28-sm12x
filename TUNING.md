@@ -94,7 +94,8 @@ is retained in this repository.
   A bounded search now chooses a byte-balanced tuple width per cache family,
   minimizing exact one-request admission bytes while capping scheduler groups
   at five. Tuple counts and sizes, admission pages, chosen widths, physical block
-  stride, and required bytes are logged at startup. On the one-Spark Vision
+  stride, and required bytes are logged at startup; unsplit families retain
+  upstream's original cache-layer order. On the one-Spark Vision
   EXL3 profile, a 2,048-token scheduler budget and five physical groups require
   3,664,189,440 bytes for exact 500K admission (7.157 KiB/token). A 14-group
   diagnostic reached 6.823 KiB/token but regressed matched C4 decode by 9.8%,
