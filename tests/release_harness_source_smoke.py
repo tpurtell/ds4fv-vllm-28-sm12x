@@ -157,6 +157,7 @@ def main() -> None:
     assert "TRITON_CACHE_DIR=/cache/huggingface/triton-cache" in dockerfile
     assert "--start-period=60m" in dockerfile
     assert "apply-vllm-long-prefill-jit.py" in dockerfile
+    assert "apply-vllm-indexer-workspace.py" in dockerfile
 
     long_prefill_patch = (
         ROOT / "patches/apply-vllm-long-prefill-jit.py"
@@ -167,6 +168,14 @@ def main() -> None:
     assert '"            query_slice_start=WarmupIntRange(0, 3),\\n"' in (
         long_prefill_patch
     )
+
+    indexer_workspace_patch = (
+        ROOT / "patches/apply-vllm-indexer-workspace.py"
+    ).read_text()
+    assert "max_num_seqs = vllm_config.scheduler_config.max_num_seqs" in (
+        indexer_workspace_patch
+    )
+    assert "max(1, min(40, max_num_seqs))" in indexer_workspace_patch
 
     vision = (
         ROOT / "overlay/vllm/model_executor/models/deepseek_v4_vision.py"

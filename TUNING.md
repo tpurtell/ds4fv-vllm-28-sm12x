@@ -80,6 +80,12 @@ is retained in this repository.
   only after a prefill exceeds the indexer logits budget. This prevents the
   128K path from compiling `BuildPrefillChunkMetadataKernel` after readiness.
 
+- **Long-context indexer workspace:** The sparse-indexer gather workspace is
+  bounded by the configured live request count instead of vLLM's fixed 40x
+  model-length multiplier. Query rows retain independent logits-budget
+  chunking, while four-sequence Spark profiles no longer reserve two oversized
+  FP8 gather slabs merely because the checkpoint advertises a long context.
+
 - **Two-rail networking:** Each Spark exposes two active RoCEv2 rails, with GID
   index 3 on `rocep1s0f0/1` and `roceP2p1s0f0/1`. On the same five warmed text
   TP2 prompts, merged dual rail with cross-NIC 2 reached 2,234.87 tok/s versus
