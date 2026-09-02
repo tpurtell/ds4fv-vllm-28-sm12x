@@ -70,10 +70,11 @@ def main() -> None:
     # overhead. Candidate strides come from real tuple/page boundaries, so the
     # result is deterministic and contains no heuristic byte increments.
     # More groups reduce slab padding but add one block-table/metadata path per
-    # group on every decode step. Twelve preserves the established five-group
-    # Vision layout while still allowing the optimizer to improve other cache
-    # mixes; the 14-group diagnostic regressed matched C4 decode by 9.8%.
-    max_groups = 12
+    # group on every decode/prefill step. Preserve the established five-group
+    # layout for every release profile: a 14-group Vision diagnostic regressed
+    # matched C4 decode by 9.8%, while a six-group 131K/8K text diagnostic
+    # regressed matched 8K prefill by 7.5%.
+    max_groups = 5
     tuple_counts = [
         spec.get_num_layer_tuples() for spec in grouped_specs
     ]

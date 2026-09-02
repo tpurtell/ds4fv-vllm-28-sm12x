@@ -195,7 +195,7 @@ def main() -> None:
         ROOT / "patches/apply-vllm-dsv4-kv-groups.py"
     ).read_text()
     for fragment in (
-        "max_groups = 12",
+        "max_groups = 5",
         "candidate_strides = sorted(",
         "block_stride * required_blocks",
         "for index in range(tuple_count)",
