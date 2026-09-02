@@ -71,10 +71,17 @@ def main() -> None:
     # result is deterministic and contains no heuristic byte increments.
     # More groups reduce slab padding but add one block-table/metadata path per
     # group on every decode/prefill step. Preserve the established five-group
-    # layout for every release profile: a 14-group Vision diagnostic regressed
-    # matched C4 decode by 9.8%, while a six-group 131K/8K text diagnostic
-    # regressed matched 8K prefill by 7.5%.
-    max_groups = 5
+    # layout for one-Spark release profiles: a 14-group Vision diagnostic
+    # regressed matched C4 decode by 9.8%, while a six-group 131K/8K text
+    # diagnostic regressed matched 8K prefill by 7.5%. Native TP2 Vision needs
+    # the balanced six-group layout, however: both variants of the five-group
+    # layout corrupt its first image request, while six groups pass the full
+    # 1/4/16-image startup ladder.
+    max_groups = (
+        6
+        if vllm_config.parallel_config.tensor_parallel_size > 1
+        else 5
+    )
     tuple_counts = [
         spec.get_num_layer_tuples() for spec in grouped_specs
     ]

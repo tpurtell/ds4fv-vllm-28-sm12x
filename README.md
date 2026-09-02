@@ -133,7 +133,7 @@ K5; the [matched content qualification](validation/2026-09-02-exl3-greedy-adapti
 also favored fixed K5 by 4.85%.
 
 The Vision K2.2/D2-v1 profile is selected explicitly and defaults to fixed
-greedy K3, a 0.86 GPU-memory reservation for its 128K KV cache, disables prefix
+greedy K3, a 0.86 GPU-memory reservation for its 500K KV cache, disables prefix
 caching, injects the checkpoint's missing Vision configuration, and gates
 readiness on 1/4/16-image requests:
 
