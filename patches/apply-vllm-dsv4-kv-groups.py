@@ -143,11 +143,15 @@ def main() -> None:
         grouped_spec: UniformTypeKVCacheSpecs,
         tuple_width: int,
     ) -> list[KVCacheGroupSpec]:
-        # Preserve upstream's original layer order when this family stays in a
-        # single group. Cache binding and native Vision's model-specific layer
-        # mapping both consume that order; rebuilding an equivalent spec in
-        # tuple order is not semantically interchangeable for those callers.
-        if tuple_width >= grouped_spec.get_num_layer_tuples():
+        # Preserve upstream's original layer order for unsplit one-Spark cache
+        # families. Native TP2 is different: its model-specific cache binding
+        # requires the tuple-normalized order used by the established
+        # six-group layout, including families that remain a single group.
+        # Treat these two orders as semantic rather than interchangeable.
+        if (
+            vllm_config.parallel_config.tensor_parallel_size == 1
+            and tuple_width >= grouped_spec.get_num_layer_tuples()
+        ):
             return [
                 KVCacheGroupSpec(
                     layer_names=list(grouped_spec.kv_cache_specs.keys()),

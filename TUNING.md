@@ -95,16 +95,19 @@ is retained in this repository.
   minimizing exact one-request admission bytes while capping scheduler groups
   at five on one-Spark profiles and six on native TP2. Tuple counts and sizes,
   admission pages, chosen widths, physical block stride, and required bytes are
-  logged at startup; unsplit families retain upstream's original cache-layer
-  order. On the one-Spark Vision
+  logged at startup; unsplit one-Spark families retain upstream's original
+  cache-layer order, while native TP2 uses the tuple-normalized order required
+  by its six-group cache binding. On the one-Spark Vision
   EXL3 profile, a 2,048-token scheduler budget and five physical groups require
   3,664,189,440 bytes for exact 500K admission (7.157 KiB/token). A 14-group
   diagnostic reached 6.823 KiB/token but regressed matched C4 decode by 9.8%,
   so the extra 4.8% capacity was rejected. A six-group 131K/8K text diagnostic
   also regressed matched 8K prefill by 7.5%, making five the one-Spark release
-  ceiling. Native TP2 retains six groups because five groups reproducibly
-  corrupt its first image request, while six passes the 1/4/16-image startup
-  ladder. The 2K profile's matched 8K prefill improved from 1,272.5 to 1,321.4
+  ceiling. Native TP2 retains the earlier six-group, tuple-normalized layout:
+  five groups and six groups with upstream unsplit-family order both corrupt
+  its first image request, while the tuple-normalized six-group layout passes
+  the 1/4/16-image startup ladder. The 2K profile's matched 8K prefill improved
+  from 1,272.5 to 1,321.4
   tok/s (+3.84%); 32K reached 1,345.1 tok/s.
 
 - **Two-rail networking:** Each Spark exposes two active RoCEv2 rails, with GID
