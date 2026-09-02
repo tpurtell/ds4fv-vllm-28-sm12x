@@ -119,7 +119,6 @@ ENV PYTHONPATH=/opt/b12x:/usr/local/lib/python3.12/dist-packages \
     TRITON_CACHE_DIR=/cache/huggingface/triton-cache \
     VLLM_CACHE_ROOT=/cache/huggingface/vllm-cache \
     VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS=1800 \
-    VLLM_DSV4_KV_TUPLES_PER_GROUP=3 \
     VLLM_USE_BREAKABLE_CUDAGRAPH=0 \
     VLLM_WORKER_MULTIPROC_METHOD=spawn
 

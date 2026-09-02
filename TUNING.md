@@ -91,9 +91,10 @@ is retained in this repository.
 - **Balanced hybrid KV slabs:** vLLM's packed DeepSeek-V4 allocator uses one
   global block pool, but its stock group builder leaves the complete 21-tuple
   full-MLA stack as the physical stride for every C4, C128, and SWA block.
-  Every cache family is now partitioned into three-tuple groups, retaining the
-  flexible shared pool while bounding partial-group padding. The exact tuple
-  counts, group count, and physical block stride are logged at startup.
+  A bounded search now chooses a byte-balanced tuple width per cache family,
+  minimizing exact one-request admission bytes while capping scheduler groups
+  at 48. Tuple counts and sizes, admission pages, chosen widths, physical block
+  stride, and required bytes are logged at startup.
 
 - **Two-rail networking:** Each Spark exposes two active RoCEv2 rails, with GID
   index 3 on `rocep1s0f0/1` and `roceP2p1s0f0/1`. On the same five warmed text

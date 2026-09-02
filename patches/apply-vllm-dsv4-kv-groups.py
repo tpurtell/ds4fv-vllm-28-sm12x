@@ -22,6 +22,14 @@ def replace_block(
     path.write_text(source[:start_index] + replacement + source[end_index:])
 
 
+def replace_once(path: Path, old: str, new: str, label: str) -> None:
+    source = path.read_text()
+    count = source.count(old)
+    if count != 1:
+        raise RuntimeError(f"{path}: {label} expected one anchor, found {count}")
+    path.write_text(source.replace(old, new, 1))
+
+
 def main() -> None:
     if len(sys.argv) != 2:
         raise SystemExit("usage: apply-vllm-dsv4-kv-groups.py VLLM_ROOT")
@@ -32,6 +40,7 @@ def main() -> None:
         "def _get_kv_cache_groups_uniform_groups(\n",
         "def _annotate_eagle_groups_deepseek_v4(\n",
         '''def _get_kv_cache_groups_uniform_groups(
+    vllm_config: VllmConfig,
     grouped_specs: list[UniformTypeKVCacheSpecs],
 ) -> list[KVCacheGroupSpec]:
     """Generate balanced packed-cache groups for DeepSeek-V4."""
@@ -51,25 +60,68 @@ def main() -> None:
 
     # Every block ID is owned by one cache group, while all groups draw from
     # one packed physical slab. Upstream keeps the complete full-MLA stack in
-    # one group, which makes that 21-tuple stack the byte stride even when a
-    # much smaller C4, C128, or SWA group owns the block. Chunk every cache
-    # family into the same small tuple width so the shared slab retains its
-    # flexibility without paying a whole-model stride for a partial group.
-    requested_tuple_width = int(
-        os.getenv("VLLM_DSV4_KV_TUPLES_PER_GROUP", "3")
-    )
-    if requested_tuple_width < 1:
-        raise ValueError(
-            "VLLM_DSV4_KV_TUPLES_PER_GROUP must be at least 1, got "
-            f"{requested_tuple_width}"
-        )
-    max_tuple_count = max(
+    # one group, which makes that stack the byte stride even when a smaller
+    # C4, C128, or SWA group owns the block. Choose a separate tuple width for
+    # each cache family by minimizing the exact one-request admission bytes:
+    #
+    #   shared stride * sum(groups_for_family * max_pages_for_family)
+    #
+    # A group-count ceiling bounds scheduler metadata and Python BlockPool
+    # overhead. Candidate strides come from real tuple/page boundaries, so the
+    # result is deterministic and contains no heuristic byte increments.
+    max_groups = 48
+    tuple_counts = [
         spec.get_num_layer_tuples() for spec in grouped_specs
+    ]
+    tuple_bytes = [sum(spec.get_page_sizes()) for spec in grouped_specs]
+    max_pages = [
+        spec.max_memory_usage_pages(vllm_config) for spec in grouped_specs
+    ]
+    candidate_strides = sorted(
+        {
+            page_bytes * width
+            for page_bytes, tuple_count in zip(tuple_bytes, tuple_counts)
+            for width in range(1, tuple_count + 1)
+        }
     )
-    tuple_width = min(requested_tuple_width, max_tuple_count)
+    best: tuple[int, int, int, list[int], list[int]] | None = None
+    for candidate_stride in candidate_strides:
+        tuple_widths = [
+            min(tuple_count, candidate_stride // page_bytes)
+            for page_bytes, tuple_count in zip(tuple_bytes, tuple_counts)
+        ]
+        if any(width < 1 for width in tuple_widths):
+            continue
+        group_counts = [
+            cdiv(tuple_count, width)
+            for tuple_count, width in zip(tuple_counts, tuple_widths)
+        ]
+        num_groups = sum(group_counts)
+        if num_groups > max_groups:
+            continue
+        block_stride = max(
+            width * page_bytes
+            for width, page_bytes in zip(tuple_widths, tuple_bytes)
+        )
+        required_blocks = sum(
+            group_count * pages
+            for group_count, pages in zip(group_counts, max_pages)
+        )
+        candidate = (
+            block_stride * required_blocks,
+            num_groups,
+            block_stride,
+            tuple_widths,
+            group_counts,
+        )
+        if best is None or candidate[:3] < best[:3]:
+            best = candidate
+    assert best is not None
+    required_bytes, _, _, tuple_widths, group_counts = best
 
     def split_spec(
         grouped_spec: UniformTypeKVCacheSpecs,
+        tuple_width: int,
     ) -> list[KVCacheGroupSpec]:
         layers_per_size: dict[int, list[str]] = defaultdict(list)
         for layer_name, layer_spec in grouped_spec.kv_cache_specs.items():
@@ -110,26 +162,74 @@ def main() -> None:
 
     kv_cache_groups = [
         group
-        for grouped_spec in grouped_specs
-        for group in split_spec(grouped_spec)
+        for grouped_spec, tuple_width in zip(grouped_specs, tuple_widths)
+        for group in split_spec(grouped_spec, tuple_width)
     ]
     packed_stride = max(
         cast(UniformTypeKVCacheSpecs, group.kv_cache_spec).page_size_bytes
         for group in kv_cache_groups
     )
     logger.info(
-        "DeepSeek-V4 packed KV groups: tuple_counts=%s, tuple_width=%d, "
-        "groups=%d, block_stride=%d bytes",
-        [spec.get_num_layer_tuples() for spec in grouped_specs],
-        tuple_width,
+        "DeepSeek-V4 packed KV groups: tuple_counts=%s, tuple_bytes=%s, "
+        "max_pages=%s, tuple_widths=%s, group_counts=%s, groups=%d, "
+        "block_stride=%d bytes, one_request=%d bytes",
+        tuple_counts,
+        tuple_bytes,
+        max_pages,
+        tuple_widths,
+        group_counts,
         len(kv_cache_groups),
         packed_stride,
+        required_bytes,
     )
     return kv_cache_groups
 
 
 ''',
         "balanced DeepSeek-V4 KV tuple groups",
+    )
+    replace_once(
+        path,
+        "        kv_cache_groups = _get_kv_cache_groups_uniform_groups(grouped_specs)\n",
+        "        kv_cache_groups = _get_kv_cache_groups_uniform_groups(\n"
+        "            vllm_config, grouped_specs\n"
+        "        )\n",
+        "pass config to DeepSeek-V4 KV group optimizer",
+    )
+    replace_once(
+        path,
+        "        # Special case (only DeepseekV4 for now): all groups are\n"
+        "        # UniformTypeKVCacheSpecs.\n"
+        "        # They must already be page_size aligned and share a common padded\n"
+        "        # layer-tuple layout. Even groups with fewer actual tuples still reserve\n"
+        "        # the global number of tuple slots in the shared tensor layout.\n"
+        "        full_mla_spec = cast(UniformTypeKVCacheSpecs, kv_cache_groups[0].kv_cache_spec)\n"
+        "        layer_tuple_bytes = sum(full_mla_spec.get_page_sizes())\n"
+        "        num_layer_tuples = max(\n"
+        "            cast(UniformTypeKVCacheSpecs, group.kv_cache_spec).get_num_layer_tuples()\n"
+        "            for group in kv_cache_groups\n"
+        "        )\n"
+        "\n"
+        "        total_max_mem_usage_bytes = 0\n"
+        "        for group in kv_cache_groups:\n"
+        "            group_spec = cast(UniformTypeKVCacheSpecs, group.kv_cache_spec)\n"
+        "            g_max_mem_usage_pages = group_spec.max_memory_usage_pages(vllm_config)\n"
+        "            g_max_mem_usage_page_bytes = (\n"
+        "                num_layer_tuples * g_max_mem_usage_pages * layer_tuple_bytes\n"
+        "            )\n"
+        "            total_max_mem_usage_bytes += g_max_mem_usage_page_bytes\n"
+        "        return total_max_mem_usage_bytes\n",
+        "        # DeepSeek-V4 groups draw block IDs from one packed global slab.\n"
+        "        # Group widths may differ, so account with the actual maximum\n"
+        "        # physical stride and each group's own admission-page count.\n"
+        "        block_stride, _ = _get_packed_kv_cache_layout(kv_cache_groups)\n"
+        "        return block_stride * sum(\n"
+        "            cast(\n"
+        "                UniformTypeKVCacheSpecs, group.kv_cache_spec\n"
+        "            ).max_memory_usage_pages(vllm_config)\n"
+        "            for group in kv_cache_groups\n"
+        "        )\n",
+        "variable-width packed KV admission accounting",
     )
 
 
