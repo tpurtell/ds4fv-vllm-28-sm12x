@@ -158,6 +158,8 @@ def main() -> None:
     assert "--start-period=60m" in dockerfile
     assert "apply-vllm-long-prefill-jit.py" in dockerfile
     assert "apply-vllm-indexer-workspace.py" in dockerfile
+    assert "apply-vllm-dsv4-kv-groups.py" in dockerfile
+    assert "VLLM_DSV4_KV_TUPLES_PER_GROUP=3" in dockerfile
 
     long_prefill_patch = (
         ROOT / "patches/apply-vllm-long-prefill-jit.py"
@@ -190,6 +192,17 @@ def main() -> None:
         indexer_workspace_patch
     )
 
+    kv_group_patch = (
+        ROOT / "patches/apply-vllm-dsv4-kv-groups.py"
+    ).read_text()
+    for fragment in (
+        'os.getenv("VLLM_DSV4_KV_TUPLES_PER_GROUP", "3")',
+        "for index in range(tuple_count)",
+        "for tuple_start in range(0, tuple_count, tuple_width)",
+        '"groups=%d, block_stride=%d bytes"',
+    ):
+        assert fragment in kv_group_patch
+
     vision = (
         ROOT / "overlay/vllm/model_executor/models/deepseek_v4_vision.py"
     ).read_text()
@@ -210,6 +223,7 @@ def main() -> None:
             "DS4FV_STARTUP_WARMUP_TIMEOUT_S",
             "TILELANG_CACHE_DIR",
             "TRITON_CACHE_DIR",
+            "VLLM_DSV4_KV_TUPLES_PER_GROUP",
         ):
             assert fragment in host_launcher
 

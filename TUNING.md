@@ -88,6 +88,13 @@ is retained in this repository.
   an explicit runtime bound check. C128 global-decode metadata uses the same
   bound while its genuinely 8K-wide prefill matrix remains unchanged.
 
+- **Balanced hybrid KV slabs:** vLLM's packed DeepSeek-V4 allocator uses one
+  global block pool, but its stock group builder leaves the complete 21-tuple
+  full-MLA stack as the physical stride for every C4, C128, and SWA block.
+  Every cache family is now partitioned into three-tuple groups, retaining the
+  flexible shared pool while bounding partial-group padding. The exact tuple
+  counts, group count, and physical block stride are logged at startup.
+
 - **Two-rail networking:** Each Spark exposes two active RoCEv2 rails, with GID
   index 3 on `rocep1s0f0/1` and `roceP2p1s0f0/1`. On the same five warmed text
   TP2 prompts, merged dual rail with cross-NIC 2 reached 2,234.87 tok/s versus

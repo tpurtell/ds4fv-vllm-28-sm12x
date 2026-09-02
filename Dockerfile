@@ -67,6 +67,8 @@ COPY patches/apply-vllm-long-prefill-jit.py \
      /tmp/apply-vllm-long-prefill-jit.py
 COPY patches/apply-vllm-indexer-workspace.py \
      /tmp/apply-vllm-indexer-workspace.py
+COPY patches/apply-vllm-dsv4-kv-groups.py \
+     /tmp/apply-vllm-dsv4-kv-groups.py
 COPY patches/apply-flashinfer-dspark-sm121.py \
      /tmp/apply-flashinfer-dspark-sm121.py
 COPY --from=exl3_source \
@@ -88,6 +90,8 @@ RUN echo "209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c  ${VL
       "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 /tmp/apply-vllm-indexer-workspace.py \
       "${VLLM_SITE_PACKAGES}/vllm" \
+ && python3 /tmp/apply-vllm-dsv4-kv-groups.py \
+      "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 -m compileall -q "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 -m py_compile \
       "${VLLM_SITE_PACKAGES}/flashinfer/mla/_sparse_mla_sm120.py" \
@@ -96,6 +100,7 @@ RUN echo "209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c  ${VL
        /tmp/apply-vllm-exl3.py /tmp/apply-vllm-dspark-adaptive-sm121.py \
        /tmp/apply-vllm-long-prefill-jit.py \
        /tmp/apply-vllm-indexer-workspace.py \
+       /tmp/apply-vllm-dsv4-kv-groups.py \
        /tmp/apply-flashinfer-dspark-sm121.py
 
 COPY scripts/start-native.sh /opt/ds4fv/bin/start-native
@@ -114,6 +119,7 @@ ENV PYTHONPATH=/opt/b12x:/usr/local/lib/python3.12/dist-packages \
     TRITON_CACHE_DIR=/cache/huggingface/triton-cache \
     VLLM_CACHE_ROOT=/cache/huggingface/vllm-cache \
     VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS=1800 \
+    VLLM_DSV4_KV_TUPLES_PER_GROUP=3 \
     VLLM_USE_BREAKABLE_CUDAGRAPH=0 \
     VLLM_WORKER_MULTIPROC_METHOD=spawn
 
