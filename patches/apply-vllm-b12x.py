@@ -149,44 +149,6 @@ def patch_b12x_wo_projection(root: Path) -> None:
     )
 
 
-def patch_b12x_wide_dual_prefill(root: Path) -> None:
-    path = root / "attention/_shared/mla/prefill.py"
-    replace_once(
-        path,
-        "  * DSV4 dual-cache (extra/indexed tokens): topk==128, heads % 8 == 0,\n"
-        "    pbs_extra in {2, 64} (BF16-QK), using the same head partitioning.\n",
-        "  * DSV4 dual-cache (extra/indexed tokens): topk in {128, 512},\n"
-        "    heads % 8 == 0, pbs_extra in {2, 64} (BF16-QK), using the same\n"
-        "    head partitioning. The 512-wide primary section is required by\n"
-        "    DeepSeek-V4 Vision's mixed-modal SWA prefix.\n",
-        "B12x wide dual-cache prefill documentation",
-    )
-    replace_once(
-        path,
-        "        if model_type == ModelType.DSV4 and int(topk) == 128:\n"
-        "            return _run_partitioned_mg(\n",
-        "        # The MG dual kernel derives num_main_tiles from the runtime\n"
-        "        # primary width. Qualify the 512-wide DSV4 Vision contract in\n"
-        "        # addition to FlashInfer's original 128-wide text contract.\n"
-        "        if model_type == ModelType.DSV4 and int(topk) in (128, 512):\n"
-        "            return _run_partitioned_mg(\n",
-        "B12x wide DSV4 dual-cache dispatch",
-    )
-    replace_once(
-        path,
-        '            "DSV4 topk==128 with heads divisible by 8 is supported. "\n',
-        '            "DSV4 topk in {128, 512} with heads divisible by 8 is supported. "\n',
-        "B12x wide dual-cache dispatch error",
-    )
-    replace_once(
-        path,
-        '        "DSV4 dual-cache topk==128 with heads%8==0 and pbs_extra in {2, 64}; "\n',
-        '        "DSV4 dual-cache topk in {128, 512} with heads%8==0 and "\n'
-        '        "pbs_extra in {2, 64}; "\n',
-        "B12x wide dual-cache supported-shape summary",
-    )
-
-
 def patch_kernel_config(root: Path) -> None:
     path = root / "config/kernel.py"
     replace_once(
@@ -1178,7 +1140,6 @@ def main() -> None:
     if source_base is None:
         source_base = ""
     patch_b12x_wo_projection(b12x_root)
-    patch_b12x_wide_dual_prefill(b12x_root)
     install_adapters(root, args.source_tree, source_base)
     patch_kernel_config(root)
     patch_mxfp4_oracle(root)

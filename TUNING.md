@@ -16,8 +16,22 @@ is retained in this repository.
 
 - **Current B12x:** `tpurtell/sparkinfer-glmrt` was merged with upstream B12x
   through `139e0404`, tested on a Spark without initializing CUDA, and pinned at
-  `1713e2ac`. Kernel paths will be enabled individually only after model-shape
-  qualification; installing B12x does not imply every projection uses it.
+  `3fc8d149`. The preceding `7bf68c9b` fix made DSV4 NVFP4 dual-cache MG prefill
+  take RoPE from the selected main/extra pool; its Spark oracle changed from
+  97.8% mismatched elements to a 0.00195 maximum error. The pinned revision also
+  owns Vision's 512-wide mixed-modal dual-cache dispatch and preserves the
+  explicit NVFP4 record format. Kernel paths are enabled individually only
+  after model-shape qualification; installing B12x does not imply every
+  projection uses it.
+
+- **Compact NVFP4 DS-MLA cache:** The opt-in `nvfp4_ds_mla` format stores each
+  DSV4 cache token in an exact 432-byte record: a 512-value E2M1 latent, 32
+  group-of-16 E4M3 scales, alignment padding, and the 64-value BF16 RoPE tail.
+  vLLM's cache allocator accounts for the compact record directly, including
+  hybrid packed groups, while the writer and B12x readers preserve arbitrary
+  packed-cache strides. The mode fails closed without the B12x attention path;
+  it can be selected by compatible profiles, but release capacity, quality,
+  and performance claims are limited to the primary Vision EXL3 K2.2 model.
 
 - **Native MXFP4 MoE port:** The newer B12x TP and replicated-input EP adapters
   were extracted from pinned vLLM lineage, adapted to the current public `b12x`
@@ -131,9 +145,10 @@ is retained in this repository.
   the matched 256-in/128-out C1 gate, 21.03% above the earlier probabilistic-K5
   result and 1.88% above stock adaptive K5.
 
-- **Native DSpark launch profile:** Native Vision defaults to qualified K3,
-  covering one pass through its three next-token predictor layers, while
-  native text and the one-Spark EXL3 role default to K5. Greedy K3 sustained
+- **Native DSpark launch profile:** Native Vision and the primary one-Spark
+  Vision EXL3 profile default to qualified K3, covering one pass through their
+  three next-token predictor layers, while the legacy text profiles default to
+  K5. Greedy K3 sustained
   30 complete 1/4/16-image cycles and reached matched C1/C2/C4 medians of
   52.63/89.86/135.73 tok/s; K6 intermittently wedged repeated 16-image service
   and was 9.6%/11.7%/7.0% slower. Explicit draft-depth, probabilistic, and

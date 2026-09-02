@@ -15,7 +15,7 @@ used as build inputs.
 - CUTLASS DSL: `4.6.2`
 - Ray: `2.48.0` with its default runtime extras (the official arm64 base does
   not include Ray)
-- B12x: `tpurtell/sparkinfer-glmrt@1713e2acb8e810888e4be2545e4a31baf0667448`
+- B12x: `tpurtell/sparkinfer-glmrt@3fc8d1491d1313c0ca64b2b95772972b7f42ee9d`
 - B12x vLLM MoE adapter lineage:
   `local-inference-lab/vllm@30038602b71395f481ef4a6edfe4fcf8551d9c15`
 

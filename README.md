@@ -27,7 +27,7 @@ source-only checks that do not import vLLM or initialize CUDA.
 | Runtime base | `vllm/vllm-openai@sha256:2a7cde230b59f3ce6cab33dd245ba6bee41aa87b38c9fe84f966ff24016813ce` |
 | vLLM | `0.28.0` (`2cf0a6915ce544dc493a0990f2ea38d81601128a`) |
 | Ray | `2.48.0` |
-| B12x | `tpurtell/sparkinfer-glmrt@1713e2acb8e810888e4be2545e4a31baf0667448` |
+| B12x | `tpurtell/sparkinfer-glmrt@3fc8d1491d1313c0ca64b2b95772972b7f42ee9d` |
 | Native checkpoint | `deepseek-ai/DeepSeek-V4-Flash-0731@9e165c30e2704aec5d9d593cce3eebd58bbef1cb` |
 | Vision checkpoint | `deepseek-ai/DeepSeek-V4-Flash-Vision-Exp@86f746b36186f0e567729a5c06a8c918caba82a9` |
 
@@ -134,10 +134,12 @@ scripts/launch-one-spark-exl3.sh
 
 It serves as `deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1` by default.
 The older text K2.1 checkpoint remains available with `MODEL_KIND=text`, but it
-is not part of the final performance/quality evidence matrix. NVFP4 DS-MLA is
-an opt-in cache format under matched qualification for the primary Vision
-profile; FP8 remains the production default until that capacity, quality, and
-performance gate passes.
+is not part of the final performance/quality evidence matrix. Any compatible
+profile may opt into NVFP4 DS-MLA with `KV_CACHE_DTYPE=nvfp4_ds_mla`; the
+backend fails closed when the required DeepSeek-V4/B12x path is unavailable.
+Only the primary Vision EXL3 profile is being qualified for release capacity,
+quality, and performance claims. FP8 remains its production default until that
+matched gate passes.
 
 ## Release benchmarks
 

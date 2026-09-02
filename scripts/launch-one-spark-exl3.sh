@@ -75,6 +75,7 @@ remote "${spark_host}" docker run -d \
   -e DS4FV_USE_B12X_COMPRESSED_MLA="${DS4FV_USE_B12X_COMPRESSED_MLA:-0}" \
   -e VLLM_CACHE_ROOT="${VLLM_CACHE_ROOT:-/cache/huggingface/vllm-cache}" \
   -e PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}" \
+  -e CUDA_LAUNCH_BLOCKING="${CUDA_LAUNCH_BLOCKING:-0}" \
   -e LOAD_FORMAT="${LOAD_FORMAT:-instanttensor}" \
   -e ENABLE_DSPARK="${ENABLE_DSPARK:-1}" \
   -e DSPARK_TOKENS="${DSPARK_TOKENS:-}" \

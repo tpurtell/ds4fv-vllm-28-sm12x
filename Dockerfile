@@ -6,7 +6,7 @@ FROM ${EXL3_SOURCE_IMAGE} AS exl3_source
 FROM --platform=linux/arm64 ${VLLM_BASE_IMAGE}
 
 ARG B12X_REPOSITORY=https://github.com/tpurtell/sparkinfer-glmrt
-ARG B12X_COMMIT=1713e2acb8e810888e4be2545e4a31baf0667448
+ARG B12X_COMMIT=3fc8d1491d1313c0ca64b2b95772972b7f42ee9d
 ARG B12X_VLLM_ADAPTER_COMMIT=30038602b71395f481ef4a6edfe4fcf8551d9c15
 ARG B12X_VLLM_ADAPTER_BASE=https://raw.githubusercontent.com/local-inference-lab/vllm/30038602b71395f481ef4a6edfe4fcf8551d9c15
 ARG RAY_VERSION=2.48.0
@@ -56,6 +56,8 @@ COPY patches/apply-vllm-indexer-workspace.py \
      /tmp/apply-vllm-indexer-workspace.py
 COPY patches/apply-vllm-dsv4-kv-groups.py \
      /tmp/apply-vllm-dsv4-kv-groups.py
+COPY patches/apply-vllm-dsv4-nvfp4.py \
+     /tmp/apply-vllm-dsv4-nvfp4.py
 COPY patches/apply-flashinfer-dspark-sm121.py \
      /tmp/apply-flashinfer-dspark-sm121.py
 COPY --from=exl3_source \
@@ -63,6 +65,8 @@ COPY --from=exl3_source \
     ${VLLM_SITE_PACKAGES}/vllm/model_executor/layers/quantization/exl3.py
 COPY overlay/vllm/model_executor/models/deepseek_v4_vision.py \
      ${VLLM_SITE_PACKAGES}/vllm/model_executor/models/deepseek_v4_vision.py
+COPY overlay/vllm/models/deepseek_v4/common/ops/nvfp4_ds_mla.py \
+     ${VLLM_SITE_PACKAGES}/vllm/models/deepseek_v4/common/ops/nvfp4_ds_mla.py
 RUN echo "209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c  ${VLLM_SITE_PACKAGES}/vllm/model_executor/layers/quantization/exl3.py" \
       | sha256sum --check --strict \
  && python3 /tmp/apply-flashinfer-dspark-sm121.py "${VLLM_SITE_PACKAGES}" \
@@ -79,6 +83,8 @@ RUN echo "209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c  ${VL
       "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 /tmp/apply-vllm-dsv4-kv-groups.py \
       "${VLLM_SITE_PACKAGES}/vllm" \
+ && python3 /tmp/apply-vllm-dsv4-nvfp4.py \
+      "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 -m compileall -q "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 -m py_compile \
       "${VLLM_SITE_PACKAGES}/flashinfer/mla/_sparse_mla_sm120.py" \
@@ -88,12 +94,14 @@ RUN echo "209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c  ${VL
        /tmp/apply-vllm-long-prefill-jit.py \
        /tmp/apply-vllm-indexer-workspace.py \
        /tmp/apply-vllm-dsv4-kv-groups.py \
+       /tmp/apply-vllm-dsv4-nvfp4.py \
        /tmp/apply-flashinfer-dspark-sm121.py
 
 COPY scripts/start-native.sh /opt/ds4fv/bin/start-native
 COPY scripts/release-warmup.py /opt/ds4fv/bin/release-warmup
 COPY scripts/container-healthcheck.py /opt/ds4fv/bin/container-healthcheck.py
 COPY tests/spark_exl3_no_gpu_smoke.py /opt/ds4fv/tests/spark_exl3_no_gpu_smoke.py
+COPY tests/spark_b12x_no_gpu_smoke.py /opt/ds4fv/tests/spark_b12x_no_gpu_smoke.py
 RUN chmod 0755 /opt/ds4fv/bin/start-native /opt/ds4fv/bin/release-warmup
 
 # Keep the recipe identity in a metadata-only tail layer so changing the

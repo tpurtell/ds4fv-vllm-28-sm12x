@@ -148,7 +148,7 @@ def main() -> None:
     assert "self._get_b12x_compressed_mla_workspace" in reserve_source
 
     # Preserve vLLM's aggregate packed-cache page stride while exposing the
-    # per-layer FP8 payload as B12x's rank-2 byte view. This is a CPU-only view
+    # per-layer packed payload as B12x's rank-2 byte view. This is a CPU-only view
     # contract check; no attention kernel is launched.
     packed_stride = 1_039_680
     cache_backing = torch.empty(4 * packed_stride, dtype=torch.uint8)
@@ -162,6 +162,19 @@ def main() -> None:
     )
     assert b12x_cache.shape == (4, 64 * 584)
     assert b12x_cache.stride() == (packed_stride, 1)
+
+    nvfp4_packed_stride = 769_824
+    nvfp4_backing = torch.empty(4 * nvfp4_packed_stride, dtype=torch.uint8)
+    nvfp4_cache = torch.as_strided(
+        nvfp4_backing,
+        size=(4, 64, 1, 432),
+        stride=(nvfp4_packed_stride, 432, 432, 1),
+    )
+    b12x_nvfp4_cache = DeepseekV4FlashInferSM120Attention._as_b12x_sparse_cache(
+        nvfp4_cache
+    )
+    assert b12x_nvfp4_cache.shape == (4, 64 * 432)
+    assert b12x_nvfp4_cache.stride() == (nvfp4_packed_stride, 1)
 
     # The public B12x dispatcher must route the exact Vision prefill envelope
     # (TP2 local heads=32, primary SWA width=512, compressed width=512) to the
@@ -192,16 +205,38 @@ def main() -> None:
             extra_page_block_size=64,
             stride_extra_kv_block=37440,
         )
+        nvfp4_main_cache = torch.empty((4, 64 * 432), dtype=torch.uint8)
+        nvfp4_extra_cache = torch.empty((4, 64 * 432), dtype=torch.uint8)
+        nvfp4_output, nvfp4_lse = prefill_dispatch.run_unified_prefill(
+            q=q,
+            kv_cache=nvfp4_main_cache,
+            topk_indices=main_indices,
+            sm_scale=512**-0.5,
+            page_block_size=64,
+            stride_kv_block=64 * 432,
+            scale_format=ScaleFormat.NVFP4_E4M3,
+            fp8_rope=False,
+            extra_kv_cache=nvfp4_extra_cache,
+            extra_indices=extra_indices,
+            extra_page_block_size=64,
+            stride_extra_kv_block=64 * 432,
+        )
     finally:
         prefill_mg.run_unified_prefill_mg = real_mg
     assert output.shape == (2, 32, 512)
     assert lse.shape == (2, 32)
-    assert len(calls) == 1
+    assert len(calls) == 2
     assert calls[0]["compute_mode"] == ComputeMode.BF16
     assert calls[0]["model_type"] == ModelType.DSV4
     assert calls[0]["scale_format"] == ScaleFormat.UE8M0_BYTE
     assert calls[0]["extra_kv_cache"] is extra_cache
     assert calls[0]["extra_page_block_size"] == 64
+    assert nvfp4_output.shape == (2, 32, 512)
+    assert nvfp4_lse.shape == (2, 32)
+    assert calls[1]["compute_mode"] == ComputeMode.BF16
+    assert calls[1]["model_type"] == ModelType.DSV4
+    assert calls[1]["scale_format"] == ScaleFormat.NVFP4_E4M3
+    assert calls[1]["extra_kv_cache"] is nvfp4_extra_cache
 
     # vLLM carries one shared-KV-head dimension in its sparse index tensors;
     # the adapter must remove that singleton for both dual-cache Vision and
@@ -217,6 +252,9 @@ def main() -> None:
         fake_attention = SimpleNamespace(
             scale=512**-0.5,
             attn_sink=torch.empty((32,), dtype=torch.float32),
+            kv_cache_dtype="fp8_ds_mla",
+            prefix="test.attn",
+            compress_ratio=4,
             _get_workspace=lambda _device: torch.empty((4096,), dtype=torch.uint8),
         )
         DeepseekV4FlashInferSM120Attention._b12x_prefill(
@@ -230,6 +268,19 @@ def main() -> None:
             extra_lengths=torch.full((2,), 512, dtype=torch.int32),
             output=torch.empty((2, 32, 512), dtype=torch.bfloat16),
         )
+        fake_attention.kv_cache_dtype = "nvfp4_ds_mla"
+        DeepseekV4FlashInferSM120Attention._b12x_prefill(
+            fake_attention,
+            q=torch.empty((2, 32, 512), dtype=torch.bfloat16),
+            swa_kv_cache=torch.empty((4, 64, 1, 432), dtype=torch.uint8),
+            swa_indices=torch.zeros((2, 1, 128), dtype=torch.int32),
+            swa_lengths=torch.full((2,), 128, dtype=torch.int32),
+            extra_kv_cache=torch.empty((4, 64, 1, 432), dtype=torch.uint8),
+            extra_indices=torch.zeros((2, 1, 512), dtype=torch.int32),
+            extra_lengths=torch.full((2,), 512, dtype=torch.int32),
+            output=torch.empty((2, 32, 512), dtype=torch.bfloat16),
+        )
+        fake_attention.kv_cache_dtype = "fp8_ds_mla"
         DeepseekV4FlashInferSM120Attention._b12x_prefill(
             fake_attention,
             q=torch.empty((2, 32, 512), dtype=torch.bfloat16),
@@ -246,9 +297,12 @@ def main() -> None:
     assert adapted[0]["topk_indices"].shape == (2, 512)
     assert adapted[0]["extra_indices"].shape == (2, 512)
     assert adapted[1]["topk_indices"].shape == (2, 128)
-    assert adapted[1]["extra_kv_cache"] is None
-    assert adapted[1]["extra_indices"] is None
-    assert adapted[1]["extra_page_block_size"] is None
+    assert adapted[1]["scale_format"] == ScaleFormat.NVFP4_E4M3
+    assert adapted[1]["fp8_rope"] is False
+    assert adapted[1]["extra_kv_cache"].shape[-1] == 432
+    assert adapted[2]["extra_kv_cache"] is None
+    assert adapted[2]["extra_indices"] is None
+    assert adapted[2]["extra_page_block_size"] is None
 
     b12x_prefill_source = inspect.getsource(
         DeepseekV4FlashInferSM120Attention._b12x_prefill
@@ -258,7 +312,10 @@ def main() -> None:
     )
     assert "run_unified_prefill" in b12x_prefill_source
     assert "extra_page_block_size" in b12x_prefill_source
-    assert "int(swa_indices_chunk.shape[-1]) in (128, 512)" in forward_prefill_source
+    assert "b12x_prefill_width in (128, 512, 1024, 2048)" in forward_prefill_source
+    assert "NVFP4 DS-MLA prefill requires a B12x-supported width" in (
+        forward_prefill_source
+    )
     assert "use_b12x_prefill" in forward_prefill_source
 
     print(

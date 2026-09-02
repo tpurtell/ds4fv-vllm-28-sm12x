@@ -167,6 +167,34 @@ def main() -> None:
     assert "apply-vllm-long-prefill-jit.py" in dockerfile
     assert "apply-vllm-indexer-workspace.py" in dockerfile
     assert "apply-vllm-dsv4-kv-groups.py" in dockerfile
+    assert "apply-vllm-dsv4-nvfp4.py" in dockerfile
+    assert "3fc8d1491d1313c0ca64b2b95772972b7f42ee9d" in dockerfile
+    assert "tests/spark_b12x_no_gpu_smoke.py" in dockerfile
+
+    nvfp4_patch = (ROOT / "patches/apply-vllm-dsv4-nvfp4.py").read_text()
+    nvfp4_producer = (
+        ROOT
+        / "overlay/vllm/models/deepseek_v4/common/ops/nvfp4_ds_mla.py"
+    ).read_text()
+    for fragment in (
+        '"nvfp4_ds_mla": torch.uint8',
+        "return (num_blocks, block_size, 432)",
+        'record_bytes = 432 if self.kv_cache_dtype == "nvfp4_ds_mla" else 584',
+        '2 if self.kv_cache_dtype == "nvfp4_ds_mla" else None',
+        'False if self.kv_cache_dtype == "nvfp4_ds_mla" else None',
+        "b12x_prefill_width in (128, 512, 1024, 2048)",
+        "nvfp4_ds_mla requires the B12x linear/attention backend",
+    ):
+        assert fragment in nvfp4_patch
+    for fragment in (
+        "DSV4_NVFP4_RECORD_BYTES = 432",
+        "DSV4_NVFP4_SCALE_OFFSET = 256",
+        "DSV4_NVFP4_PAD_OFFSET = 288",
+        "DSV4_NVFP4_ROPE_OFFSET = 304",
+        "cache_block_stride",
+        "cache_token_stride",
+    ):
+        assert fragment in nvfp4_producer
 
     long_prefill_patch = (
         ROOT / "patches/apply-vllm-long-prefill-jit.py"
@@ -218,6 +246,9 @@ def main() -> None:
     ):
         assert fragment in kv_group_patch
 
+    b12x_patch = (ROOT / "patches/apply-vllm-b12x.py").read_text()
+    assert "patch_b12x_wide_dual_prefill" not in b12x_patch
+
     vision = (
         ROOT / "overlay/vllm/model_executor/models/deepseek_v4_vision.py"
     ).read_text()
@@ -246,6 +277,7 @@ def main() -> None:
     assert "gpu_memory_utilization=0.86" in one_spark_launcher
     assert "max_model_len=500000" in one_spark_launcher
     assert "max_num_batched_tokens=2048" in one_spark_launcher
+    assert '-e KV_CACHE_DTYPE="${KV_CACHE_DTYPE:-fp8}"' in one_spark_launcher
     assert "gpu_memory_default=0.86" in launcher
     assert "max_model_len_default=500000" in launcher
     assert "max_num_batched_tokens_default=2048" in launcher
