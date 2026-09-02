@@ -1,0 +1,143 @@
+{
+  "arms": {
+    "code": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 40.88571889123916,
+      "candidate_contract_passes": 5,
+      "candidate_median_decode_tok_s": 40.661934655934644,
+      "category": "code",
+      "decode_delta": {
+        "absolute": -0.22378423530451386,
+        "percent": -0.5473408353166231
+      },
+      "samples_per_profile": 5
+    },
+    "fable": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 24.870715165493532,
+      "candidate_contract_passes": 5,
+      "candidate_median_decode_tok_s": 21.272327377051003,
+      "category": "creative-prose",
+      "decode_delta": {
+        "absolute": -3.5983877884425297,
+        "percent": -14.46837280109683
+      },
+      "samples_per_profile": 5
+    },
+    "hello": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 36.93287342531511,
+      "candidate_contract_passes": 5,
+      "candidate_median_decode_tok_s": 43.632431749115284,
+      "category": "short-response",
+      "decode_delta": {
+        "absolute": 6.699558323800176,
+        "percent": 18.139824233681367
+      },
+      "samples_per_profile": 5
+    },
+    "math": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 40.60912518519302,
+      "candidate_contract_passes": 5,
+      "candidate_median_decode_tok_s": 41.36341667231646,
+      "category": "reasoning",
+      "decode_delta": {
+        "absolute": 0.7542914871234387,
+        "percent": 1.8574433299993087
+      },
+      "samples_per_profile": 5
+    },
+    "multilingual": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 24.146823194114326,
+      "candidate_contract_passes": 5,
+      "candidate_median_decode_tok_s": 19.359239667029705,
+      "category": "multilingual",
+      "decode_delta": {
+        "absolute": -4.787583527084621,
+        "percent": -19.82697056502063
+      },
+      "samples_per_profile": 5
+    },
+    "orchid": {
+      "baseline_contract_passes": null,
+      "baseline_median_decode_tok_s": 50.771296874536255,
+      "candidate_contract_passes": null,
+      "candidate_median_decode_tok_s": 70.29034965484344,
+      "category": "low-entropy-showcase",
+      "decode_delta": {
+        "absolute": 19.519052780307184,
+        "percent": 38.445054552263635
+      },
+      "samples_per_profile": 5
+    },
+    "structured-json-constrained": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 37.44851415259583,
+      "candidate_contract_passes": 5,
+      "candidate_median_decode_tok_s": 41.492014292318814,
+      "category": "structured-output",
+      "decode_delta": {
+        "absolute": 4.043500139722987,
+        "percent": 10.797491519280221
+      },
+      "samples_per_profile": 5
+    },
+    "structured-json-normal": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 37.67950715963523,
+      "candidate_contract_passes": 5,
+      "candidate_median_decode_tok_s": 39.03184807874205,
+      "category": "structured-output",
+      "decode_delta": {
+        "absolute": 1.3523409191068225,
+        "percent": 3.5890621216923435
+      },
+      "samples_per_profile": 5
+    },
+    "topic": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 26.20378205381353,
+      "candidate_contract_passes": 5,
+      "candidate_median_decode_tok_s": 20.316855435609963,
+      "category": "exposition",
+      "decode_delta": {
+        "absolute": -5.886926618203567,
+        "percent": -22.465942534989225
+      },
+      "samples_per_profile": 5
+    }
+  },
+  "baseline": {
+    "artifact": "benchmarks/20260902T024600Z-primary-vision-fp8/content-types.json",
+    "label": "greedy-k3",
+    "profile": null,
+    "quality_contract_passes": 40,
+    "structured_contract_passes": 10,
+    "weighted_content_score_tok_s": 33.03043551018346
+  },
+  "candidate": {
+    "artifact": "benchmarks/20260902T024600Z-primary-vision-fp8/content-types-k6.json",
+    "label": "greedy-k6",
+    "profile": {
+      "draft_sample_method": "greedy",
+      "dspark_policy": "fixed",
+      "dspark_tokens": 6
+    },
+    "quality_contract_passes": 40,
+    "structured_contract_passes": 10,
+    "weighted_content_score_tok_s": 32.409733820369645
+  },
+  "model": "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1",
+  "provenance": {
+    "image_id": "sha256:83fdbf8cf461e83c6acd3c90677feb12b08ad10a5a5a3db5299efbe3899ad227",
+    "recipe_commit": "6407692e58709c5b7082af39bfaa4d99b7dfaae1",
+    "role": "exl3-vision"
+  },
+  "schema": "ds4fv-content-types-comparison.v1",
+  "weighted_content_score_delta": {
+    "absolute": -0.6207016898138136,
+    "percent": -1.879181065058766
+  }
+}

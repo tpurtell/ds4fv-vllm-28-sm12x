@@ -103,6 +103,14 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--image-id")
     parser.add_argument("--recipe-commit")
+    parser.add_argument("--dspark-tokens", type=int)
+    parser.add_argument(
+        "--dspark-policy",
+        choices=("fixed", "stock-adaptive", "target-only"),
+    )
+    parser.add_argument(
+        "--draft-sample-method", choices=("greedy", "probabilistic")
+    )
     parser.add_argument("--repeats", type=int, default=5)
     parser.add_argument("--orchid-warmups", type=int, default=1)
     parser.add_argument(
@@ -135,6 +143,8 @@ def parse_args() -> argparse.Namespace:
         parser.error("repeats, orchid count, and orchid max tokens must be positive")
     if args.orchid_warmups < 0 or args.timeout <= 0:
         parser.error("orchid warmups must be non-negative and timeout must be positive")
+    if args.dspark_tokens is not None and args.dspark_tokens < 0:
+        parser.error("dspark tokens must be non-negative")
     maximum_contracts = args.repeats * len(ARMS)
     if args.minimum_contract_passes is not None and not (
         0 <= args.minimum_contract_passes <= maximum_contracts
@@ -451,6 +461,11 @@ def main() -> None:
             "role": args.role,
             "image_id": args.image_id,
             "recipe_commit": args.recipe_commit,
+        },
+        "profile": {
+            "dspark_tokens": args.dspark_tokens,
+            "dspark_policy": args.dspark_policy,
+            "draft_sample_method": args.draft_sample_method,
         },
         "repeats": args.repeats,
         "thinking": "off",

@@ -1,0 +1,143 @@
+{
+  "arms": {
+    "code": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 41.34867379578572,
+      "candidate_contract_passes": 5,
+      "candidate_median_decode_tok_s": 39.97469494171256,
+      "category": "code",
+      "decode_delta": {
+        "absolute": -1.3739788540731581,
+        "percent": -3.3229091236614106
+      },
+      "samples_per_profile": 5
+    },
+    "fable": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 23.707500803033717,
+      "candidate_contract_passes": 5,
+      "candidate_median_decode_tok_s": 19.80752227663038,
+      "category": "creative-prose",
+      "decode_delta": {
+        "absolute": -3.8999785264033378,
+        "percent": -16.450399216708156
+      },
+      "samples_per_profile": 5
+    },
+    "hello": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 36.8039673400278,
+      "candidate_contract_passes": 5,
+      "candidate_median_decode_tok_s": 43.32009189887022,
+      "category": "short-response",
+      "decode_delta": {
+        "absolute": 6.516124558842414,
+        "percent": 17.704951476129338
+      },
+      "samples_per_profile": 5
+    },
+    "math": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 39.29045011373854,
+      "candidate_contract_passes": 5,
+      "candidate_median_decode_tok_s": 39.93781611388938,
+      "category": "reasoning",
+      "decode_delta": {
+        "absolute": 0.6473660001508463,
+        "percent": 1.6476421071197844
+      },
+      "samples_per_profile": 5
+    },
+    "multilingual": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 25.4807890017485,
+      "candidate_contract_passes": 5,
+      "candidate_median_decode_tok_s": 19.991372030500006,
+      "category": "multilingual",
+      "decode_delta": {
+        "absolute": -5.489416971248495,
+        "percent": -21.543355548652
+      },
+      "samples_per_profile": 5
+    },
+    "orchid": {
+      "baseline_contract_passes": null,
+      "baseline_median_decode_tok_s": 50.67399769909158,
+      "candidate_contract_passes": null,
+      "candidate_median_decode_tok_s": 69.95479630443192,
+      "category": "low-entropy-showcase",
+      "decode_delta": {
+        "absolute": 19.280798605340344,
+        "percent": 38.04870245255189
+      },
+      "samples_per_profile": 5
+    },
+    "structured-json-constrained": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 38.255514336118175,
+      "candidate_contract_passes": 5,
+      "candidate_median_decode_tok_s": 37.17883887450971,
+      "category": "structured-output",
+      "decode_delta": {
+        "absolute": -1.0766754616084668,
+        "percent": -2.8144320636984466
+      },
+      "samples_per_profile": 5
+    },
+    "structured-json-normal": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 37.57999040175063,
+      "candidate_contract_passes": 5,
+      "candidate_median_decode_tok_s": 39.00004538333339,
+      "category": "structured-output",
+      "decode_delta": {
+        "absolute": 1.4200549815827657,
+        "percent": 3.7787529118597396
+      },
+      "samples_per_profile": 5
+    },
+    "topic": {
+      "baseline_contract_passes": 5,
+      "baseline_median_decode_tok_s": 25.36923231861635,
+      "candidate_contract_passes": 2,
+      "candidate_median_decode_tok_s": 18.547212408008853,
+      "category": "exposition",
+      "decode_delta": {
+        "absolute": -6.822019910607498,
+        "percent": -26.890919776083997
+      },
+      "samples_per_profile": 5
+    }
+  },
+  "baseline": {
+    "artifact": "benchmarks/20260902T024400Z-primary-vision-nvfp4/content-types.json",
+    "label": "greedy-k3",
+    "profile": null,
+    "quality_contract_passes": 40,
+    "structured_contract_passes": 10,
+    "weighted_content_score_tok_s": 32.84548082026929
+  },
+  "candidate": {
+    "artifact": "benchmarks/20260902T024400Z-primary-vision-nvfp4/content-types-k6.json",
+    "label": "greedy-k6",
+    "profile": {
+      "draft_sample_method": "greedy",
+      "dspark_policy": "fixed",
+      "dspark_tokens": 6
+    },
+    "quality_contract_passes": 37,
+    "structured_contract_passes": 10,
+    "weighted_content_score_tok_s": 31.381164542647564
+  },
+  "model": "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1",
+  "provenance": {
+    "image_id": "sha256:83fdbf8cf461e83c6acd3c90677feb12b08ad10a5a5a3db5299efbe3899ad227",
+    "recipe_commit": "6407692e58709c5b7082af39bfaa4d99b7dfaae1",
+    "role": "exl3-vision"
+  },
+  "schema": "ds4fv-content-types-comparison.v1",
+  "weighted_content_score_delta": {
+    "absolute": -1.4643162776217231,
+    "percent": -4.4581971128219156
+  }
+}

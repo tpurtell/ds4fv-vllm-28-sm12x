@@ -124,6 +124,21 @@ is retained in this repository.
   from 1,272.5 to 1,321.4
   tok/s (+3.84%); 32K reached 1,345.1 tok/s.
 
+- **DCP-aware Vision cache and attention:** Native Vision TP2+DCP2 shards the
+  substantial C4 main/indexer caches while replicating bounded SWA and C128
+  records, keeps APC enabled, and merges C4 rank-local B12x attention with exact
+  LSE weighting and one global sink. Target, profiling, CUDA-graph, and DSpark
+  metadata builders use each cache group's effective ownership width; the
+  replicated draft path maps physical rank 1 to logical rank 0. The retained
+  500K FP8 profile exposes a 1,337,408-token pool (2.67 concurrent maximum-length
+  requests), 29.0% more capacity than the matched DCP1 control.
+
+- **DCP communication:** `ag_rs` remains the native two-Spark default: packed
+  A2A improved matched C1 only 1.2% and reduced the KV pool by 4.1%, while
+  DCP-group query replication lost another 3.4% at C1 and reduced the pool by
+  7.2%. Both alternatives were rejected in favor of optimizing the original
+  query-all-gather/LSE-all-gather/output-reduce-scatter path.
+
 - **Two-rail networking:** Each Spark exposes two active RoCEv2 rails, with GID
   index 3 on `rocep1s0f0/1` and `roceP2p1s0f0/1`. On the same five warmed text
   TP2 prompts, merged dual rail with cross-NIC 2 reached 2,234.87 tok/s versus
@@ -183,6 +198,11 @@ is retained in this repository.
   image ID plus the OCI-baked recipe commit across code-agent decode/depth,
   cold 8K--128K prefill, semantic content, 128K retrieval, prefix/Vision, and
   C4 soak receipts; structured normal and constrained arms retain half weight.
+
+- **Pinned tool-eval qualification:** The release runner requires the exact
+  local `tool-eval-bench` `2.3.2.dev3+g5df1e9e0c` 69-case/138-point matrix and
+  refuses older Spark-local clients. Corrected primary Vision results are
+  114/138 FP8 and 117/138 NVFP4, with structured output 12/12 in both modes.
 
 - **Release-ready kernel warmup:** Docker health is gated on successful real
   requests covering DSpark's exact 8--256 scheduling buckets, rendered greedy
@@ -251,6 +271,19 @@ is retained in this repository.
   warm restart, zero-late-JIT, and the EXL3 5% proportional regression gate.
   Evidence is retained in
   `validation/2026-09-02-native-prefill-hang-fix.md`.
+- **Passed development performance gate:** Make native Vision's hybrid
+  SWA/C4/C128 cache and B12x attention DCP2-aware without disabling prefix
+  caching. Tracing first found that DSpark's private input-preparation kernel
+  bypassed the standard DCP slot mapper; a canonical owner/local-offset fix
+  restored ordinary sharded-cache acceptance. Rate-aware ownership then
+  removed DCP exchange from bounded SWA and C128 layers. Its first matched
+  WIP19 C1 series reached 47.11 tok/s and 62.97 ms per target pass; a five-run
+  repeat held target-pass cost tightly at 62.71--62.95 ms (62.76 ms median),
+  only 4.7% above DCP1's 59.92 ms and down from the prior DCP2 path's 10.2%
+  overhead. Raw TPS still follows content-dependent draft acceptance, so the
+  production-image weighted content suite remains the release authority.
+  Retained bring-up evidence is in
+  `validation/2026-09-02-native-vision-dcp2.md`.
 - **Ready for qualification:** The one-Spark Vision EXL3 profile pins
   `wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1` at
   `8aab722f04f7e8963af83de5acb16138474e0228`, restores its missing Vision

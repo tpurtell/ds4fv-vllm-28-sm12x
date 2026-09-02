@@ -90,6 +90,18 @@ cross-NIC policies remain environment overrides, but the defaults are now
 qualified: merged dual rail with `NCCL_CROSS_NIC=2` was 4.84% faster than one
 HCA on the matched native text TP2 prefill run.
 
+The retained rate-aware DCP2 development image has passed capacity and the full
+strict startup ladder. Replicating bounded SWA and C128 cache families while
+sharding C4 reduced repeated C1 target-pass overhead from 10.2% to 4.7% versus
+the matched 500K/APC DCP1 control. Its 1,337,408-token pool is 29.0% larger
+than DCP1 and admits 2.67 concurrent 500K requests; final production-image
+content qualification remains pending. `ag_rs` is the default communication
+backend; set
+`DCP_COMM_BACKEND=a2a` only for diagnostics, since it recovered just 1.2% at
+C1 and reduced the measured KV pool. DCP-group query replication was also
+tested and rejected: its extra small-M Q projection cost more than the removed
+query all-gather and reduced both C1 throughput and KV capacity.
+
 Native DSpark is enabled by default. Vision uses the qualified K3 depth (one
 pass through its three next-token predictor layers), while native text
 defaults to K5. K6's second predictor pass is not enabled by default because
@@ -168,6 +180,7 @@ loads all shards, serves correctly, and reaches 2,234.87 tok/s on its retained
 8,192+1 baseline. The retained matched fabric test makes merged dual rail the
 default, and the [compressed MLA qualification](validation/2026-09-02-b12x-compressed-mla.md)
 records why its faster isolated B12x kernel remains opt-in. Reference-logit
-comparison, longer reliability testing, and the frozen-image release suites
-remain pending; the mixed K2/K3 microbenchmark and matched one-Spark full-model
-gates have passed.
+comparison and longer reliability testing remain pending. Native Vision now
+also reaches strict ready state with TP2+DCP2, APC, and a 500K model length;
+the committed-image release suite remains before publication. The mixed K2/K3
+microbenchmark and matched one-Spark full-model gates have passed.

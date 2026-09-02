@@ -177,11 +177,12 @@ serve_model() {
   check_fabric_env
 
   local model_kind=${MODEL_KIND:-vision}
+  local dcp_comm_backend=${DCP_COMM_BACKEND:-ag_rs}
   local dspark_default_tokens=5
   local moe_mode=${MOE_MODE:-tp}
   local model_repo model_revision served_name
   local -a model_args=() vision_args=() prefix_args=() moe_args=()
-  local -a speculative_args=()
+  local -a speculative_args=() profiler_args=()
   case "${model_kind}" in
     text)
       model_repo=${MODEL_REPO:-deepseek-ai/DeepSeek-V4-Flash-0731}
@@ -216,6 +217,14 @@ serve_model() {
       ;;
   esac
 
+  case "${dcp_comm_backend}" in
+    ag_rs|a2a) ;;
+    *)
+      echo "DCP_COMM_BACKEND must be 'ag_rs' or 'a2a', got '${dcp_comm_backend}'" >&2
+      exit 64
+      ;;
+  esac
+
   if [[ -n "${MODEL_PATH:-}" ]]; then
     model_args=("${MODEL_PATH}")
   else
@@ -232,6 +241,9 @@ serve_model() {
     prefix_args=(--no-enable-prefix-caching)
   fi
   configure_dspark_args speculative_args "${dspark_default_tokens}"
+  if [[ -n "${DS4FV_PROFILER_CONFIG:-}" ]]; then
+    profiler_args=(--profiler-config "${DS4FV_PROFILER_CONFIG}")
+  fi
 
   run_vllm_with_warmup "native-${model_kind}" vllm serve "${model_args[@]}" \
     --served-model-name "${served_name}" \
@@ -240,9 +252,11 @@ serve_model() {
     --distributed-executor-backend ray \
     --tensor-parallel-size "${TP_SIZE:-2}" \
     --decode-context-parallel-size "${DCP_SIZE:-2}" \
+    --dcp-comm-backend "${dcp_comm_backend}" \
     "${moe_args[@]}" \
     --moe-backend b12x \
     --linear-backend b12x \
+    "${profiler_args[@]}" \
     --disable-custom-all-reduce \
     --max-model-len "${MAX_MODEL_LEN:-500000}" \
     --max-num-seqs "${MAX_NUM_SEQS:-4}" \

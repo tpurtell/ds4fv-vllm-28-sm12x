@@ -12,6 +12,8 @@ recipe_commit=${RECIPE_COMMIT:-$(git -C "${script_dir}/.." rev-parse HEAD)}
 stamp=${BENCHMARK_STAMP:-$(date -u +%Y%m%dT%H%M%SZ)}
 output_root=${OUTPUT_ROOT:-${script_dir}/../benchmarks/${stamp}-${role}}
 kv_cache_dtype=${KV_CACHE_DTYPE:-fp8}
+tool_eval_reference_date=${TOOL_EVAL_REFERENCE_DATE:-$(date -u +%F)}
+tool_eval_required_version=${TOOL_EVAL_REQUIRED_VERSION:-2.3.2.dev3+g5df1e9e0c}
 
 case "${role}" in
   native-vision)
@@ -38,6 +40,33 @@ fi
 if [[ ! "${recipe_commit}" =~ ^[0-9a-f]{40}$ ]]; then
   echo "RECIPE_COMMIT must be a full 40-hex commit" >&2
   exit 64
+fi
+
+tool_eval_cmd=()
+if [[ -n "${TOOL_EVAL_BENCH:-}" ]]; then
+  tool_eval_cmd=("${TOOL_EVAL_BENCH}")
+elif command -v tool-eval-bench >/dev/null 2>&1; then
+  tool_eval_cmd=(tool-eval-bench)
+elif command -v uv >/dev/null 2>&1 \
+  && [[ -f "${script_dir}/../../tool-eval-bench/pyproject.toml" ]]; then
+  tool_eval_cmd=(
+    uv run --project "${script_dir}/../../tool-eval-bench" tool-eval-bench
+  )
+else
+  echo "Full release qualification requires tool-eval-bench." >&2
+  echo "Install it or set TOOL_EVAL_BENCH to its executable path." >&2
+  exit 69
+fi
+if ! tool_eval_version_output=$("${tool_eval_cmd[@]}" --version 2>&1); then
+  echo "Unable to identify the selected tool-eval-bench executable:" >&2
+  echo "${tool_eval_version_output}" >&2
+  exit 69
+fi
+tool_eval_version=${tool_eval_version_output#tool-eval-bench }
+if [[ "${tool_eval_version}" != "${tool_eval_required_version}" ]]; then
+  echo "Release qualification requires tool-eval-bench ${tool_eval_required_version}; selected ${tool_eval_version}." >&2
+  echo "Run the suite from the qualification workstation or set TOOL_EVAL_BENCH to the exact executable." >&2
+  exit 69
 fi
 if [[ -e "${output_root}" ]] && [[ -n "$(find "${output_root}" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]; then
   echo "Refusing to overwrite non-empty output directory ${output_root}" >&2
@@ -101,6 +130,9 @@ python3 "${script_dir}/benchmark-prefill.py" \
 
 python3 "${script_dir}/benchmark-content-types.py" \
   "${common[@]}" \
+  --dspark-tokens "${dspark_tokens}" \
+  --dspark-policy fixed \
+  --draft-sample-method greedy \
   --repeats 5 \
   --orchid-warmups 1 \
   --minimum-contract-passes "${content_contract_floor}" \
@@ -149,6 +181,63 @@ python3 "${script_dir}/soak-api.py" \
   --concurrency 4 \
   --runs 20 \
   --output "${output_root}/post-long-context-c4-soak.json"
+
+# The full default 69-scenario matrix is a release artifact. Do not pass
+# --short or --hardmode: the stable score contract is exactly 138 points.
+"${tool_eval_cmd[@]}" \
+  --model "${model}" \
+  --backend vllm \
+  --base-url "${base_url%/}/v1/" \
+  --parallel 1 \
+  --temperature 0.0 \
+  --seed 0 \
+  --reference-date "${tool_eval_reference_date}" \
+  --timeout 300 \
+  --max-turns 8 \
+  --json-file "${output_root}/tool-eval-bench.json" \
+  --output-dir "${output_root}/tool-eval-reports" \
+  --no-live
+
+python3 - "${output_root}/manifest.json" \
+  "${output_root}/tool-eval-bench.json" "${tool_eval_required_version}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+manifest_path = Path(sys.argv[1])
+result_path = Path(sys.argv[2])
+required_version = sys.argv[3]
+manifest = json.loads(manifest_path.read_text())
+result = json.loads(result_path.read_text())
+scores = result.get("scores", {})
+if result.get("tool_eval_bench_version") != required_version:
+    raise SystemExit(
+        "tool-eval-bench result version mismatch: "
+        f"{result.get('tool_eval_bench_version')!r} != {required_version!r}"
+    )
+if result.get("status") != "completed":
+    raise SystemExit("tool-eval-bench did not complete")
+if result.get("total_scenarios") != 69:
+    raise SystemExit("tool-eval-bench must execute all 69 default scenarios")
+if scores.get("max_points") != 138:
+    raise SystemExit("tool-eval-bench score contract changed from /138")
+categories = scores.get("category_scores", [])
+manifest["tool_eval_bench"] = {
+    "artifact": result_path.name,
+    "version": result.get("tool_eval_bench_version"),
+    "run_id": result.get("run_id"),
+    "scenario_count": result["total_scenarios"],
+    "points": scores.get("total_points"),
+    "max_points": scores["max_points"],
+    "normalized_score": result.get("final_score"),
+    "rating": result.get("rating"),
+    "pass_count": sum(item.get("pass_count", 0) for item in categories),
+    "partial_count": sum(item.get("partial_count", 0) for item in categories),
+    "fail_count": sum(item.get("fail_count", 0) for item in categories),
+    "status": result["status"],
+}
+manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+PY
 
 python3 - "${output_root}/manifest.json" <<'PY'
 import json

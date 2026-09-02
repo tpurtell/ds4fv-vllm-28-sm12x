@@ -1,0 +1,94 @@
+{
+  "schema": "ds4fv-vision-prefix-replay.v1",
+  "passed": true,
+  "provenance": {
+    "role": "exl3-vision",
+    "image_id": "sha256:83fdbf8cf461e83c6acd3c90677feb12b08ad10a5a5a3db5299efbe3899ad227",
+    "recipe_commit": "6407692e58709c5b7082af39bfaa4d99b7dfaae1",
+    "model": "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1"
+  },
+  "cache_salt": "vision-prefix-replay-d283d147b774492c9d1baaef28b04681",
+  "prefix_cache_hits_before": 807168.0,
+  "prefix_cache_hits_after_seed": 807168.0,
+  "prefix_cache_hits_after_exact_replay": 807680.0,
+  "prefix_cache_hits_after_changed_images": 807680.0,
+  "exact_replay_hit_delta": 512.0,
+  "seed": {
+    "passed": true,
+    "expected": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "observed": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "response": "1,2,3,4",
+    "request_seconds": 1.1542610567994416,
+    "usage": {
+      "prompt_tokens": 629,
+      "total_tokens": 637,
+      "completion_tokens": 8,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "exact_replay": {
+    "passed": true,
+    "expected": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "observed": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "response": "1,2,3,4",
+    "request_seconds": 0.6890027010813355,
+    "usage": {
+      "prompt_tokens": 629,
+      "total_tokens": 637,
+      "completion_tokens": 8,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "changed_images_collision_guard": {
+    "passed": true,
+    "expected": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "observed": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "response": "5,6,7,8",
+    "request_seconds": 1.1637498608324677,
+    "usage": {
+      "prompt_tokens": 629,
+      "total_tokens": 637,
+      "completion_tokens": 8,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  }
+}

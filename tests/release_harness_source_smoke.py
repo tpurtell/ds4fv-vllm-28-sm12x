@@ -146,6 +146,8 @@ def main() -> None:
     assert 'content_contract_floor=38' in runner
     assert 'content_contract_floor=34' in runner
     assert '--minimum-contract-passes "${content_contract_floor}"' in runner
+    assert '--dspark-tokens "${dspark_tokens}"' in runner
+    assert "--draft-sample-method greedy" in runner
 
     for fragment in (
         "DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1",
@@ -167,9 +169,72 @@ def main() -> None:
     assert "apply-vllm-long-prefill-jit.py" in dockerfile
     assert "apply-vllm-indexer-workspace.py" in dockerfile
     assert "apply-vllm-dsv4-kv-groups.py" in dockerfile
+    assert "apply-vllm-dcp-swa.py" in dockerfile
     assert "apply-vllm-dsv4-nvfp4.py" in dockerfile
+    assert "apply-vllm-dcp-dsv4.py" in dockerfile
+    assert "apply-vllm-dcp-rate-aware.py" in dockerfile
     assert "3fc8d1491d1313c0ca64b2b95772972b7f42ee9d" in dockerfile
     assert "tests/spark_b12x_no_gpu_smoke.py" in dockerfile
+    assert "tests/spark_dcp_swa_no_gpu_smoke.py" in dockerfile
+    assert "tests/spark_dcp_dsv4_no_gpu_smoke.py" in dockerfile
+    assert "tests/spark_dcp_rate_aware_no_gpu_smoke.py" in dockerfile
+
+    release_suite = (ROOT / "scripts/run-release-suite.sh").read_text()
+    for fragment in (
+        "tool-eval-bench.json",
+        "--parallel 1",
+        "--temperature 0.0",
+        "--max-turns 8",
+        'result.get("total_scenarios") != 69',
+        'scores.get("max_points") != 138',
+        "2.3.2.dev3+g5df1e9e0c",
+        'tool_eval_version_output=$("${tool_eval_cmd[@]}" --version 2>&1)',
+        "tool-eval-bench result version mismatch",
+    ):
+        assert fragment in release_suite
+
+    dcp_swa_patch = (ROOT / "patches/apply-vllm-dcp-swa.py").read_text()
+    for fragment in (
+        "effective_block_size = self.block_size * dcp_world_size",
+        "kv_cache_spec.block_size * dcp_world_size",
+        "(FullAttentionSpec, SlidingWindowSpec, MambaSpec)",
+        "(FullAttentionSpec, SlidingWindowSpec)",
+        'admission_kwargs["dcp_world_size"]',
+    ):
+        assert fragment in dcp_swa_patch
+
+    dcp_dsv4_patch = (ROOT / "patches/apply-vllm-dcp-dsv4.py").read_text()
+    for fragment in (
+        "Compression is semantic: first select the completed C4/C128 record",
+        "A real query row exists on every DCP rank",
+        "self.dcp_manager = MLADCPManager(",
+        "gathered_query = self.dcp_manager.query_gather(",
+        "local_query.contiguous()",
+        "def _dcp_ag_rs_combine_into(",
+        "pynccl_comm.reduce_scatter(destination, packed_output)",
+        "combined = self.dcp_manager.combine(",
+        'return_lse=True, lse_scale="base2"',
+        "self.dcp_world_size if self.compress_ratio == 4 else 1",
+        "supports_dcp_with_varlen=True",
+        "ctx_virtual_block_size = block_size * CP_SIZE",
+        "q_virtual_block_size = block_size * CP_SIZE",
+        "self.block_tables.cp_size,",
+    ):
+        assert fragment in dcp_dsv4_patch
+    assert "def _dcp_head_major_query_gather(" not in dcp_dsv4_patch
+
+    dcp_rate_aware_patch = (
+        ROOT / "patches/apply-vllm-dcp-rate-aware.py"
+    ).read_text()
+    for fragment in (
+        "get_kv_cache_dcp_world_size(",
+        "split the original mixed full-MLA family",
+        "self.block_tables.kv_cache_cp_sizes[gid]",
+        "if self.block_tables.kv_cache_cp_sizes[gid] > 1",
+        "def _swa_lengths_for_shard(",
+        "swa_lens = _swa_lengths_for_shard(self, swa_lens)",
+    ):
+        assert fragment in dcp_rate_aware_patch
 
     nvfp4_patch = (ROOT / "patches/apply-vllm-dsv4-nvfp4.py").read_text()
     nvfp4_producer = (
@@ -284,6 +349,8 @@ def main() -> None:
     assert 'role=${DS4FV_ROLE:-exl3}' in launcher
     assert 'local model_kind=${MODEL_KIND:-vision}' in launcher
     assert '--decode-context-parallel-size "${DCP_SIZE:-2}"' in launcher
+    assert '--dcp-comm-backend "${dcp_comm_backend}"' in launcher
+    assert 'DCP_COMM_BACKEND:-ag_rs' in launcher
     assert '--max-model-len "${MAX_MODEL_LEN:-500000}"' in launcher
     assert 'if [[ "${model_kind}" == vision ||' not in launcher
     assert launcher.count('if [[ "${ENABLE_PREFIX_CACHING:-1}" == 1 ]]') == 2

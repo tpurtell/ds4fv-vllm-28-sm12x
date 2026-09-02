@@ -56,8 +56,14 @@ COPY patches/apply-vllm-indexer-workspace.py \
      /tmp/apply-vllm-indexer-workspace.py
 COPY patches/apply-vllm-dsv4-kv-groups.py \
      /tmp/apply-vllm-dsv4-kv-groups.py
+COPY patches/apply-vllm-dcp-swa.py \
+     /tmp/apply-vllm-dcp-swa.py
 COPY patches/apply-vllm-dsv4-nvfp4.py \
      /tmp/apply-vllm-dsv4-nvfp4.py
+COPY patches/apply-vllm-dcp-dsv4.py \
+     /tmp/apply-vllm-dcp-dsv4.py
+COPY patches/apply-vllm-dcp-rate-aware.py \
+     /tmp/apply-vllm-dcp-rate-aware.py
 COPY patches/apply-flashinfer-dspark-sm121.py \
      /tmp/apply-flashinfer-dspark-sm121.py
 COPY --from=exl3_source \
@@ -83,7 +89,13 @@ RUN echo "209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c  ${VL
       "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 /tmp/apply-vllm-dsv4-kv-groups.py \
       "${VLLM_SITE_PACKAGES}/vllm" \
+ && python3 /tmp/apply-vllm-dcp-swa.py \
+      "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 /tmp/apply-vllm-dsv4-nvfp4.py \
+      "${VLLM_SITE_PACKAGES}/vllm" \
+ && python3 /tmp/apply-vllm-dcp-dsv4.py \
+      "${VLLM_SITE_PACKAGES}/vllm" \
+ && python3 /tmp/apply-vllm-dcp-rate-aware.py \
       "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 -m compileall -q "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 -m py_compile \
@@ -94,7 +106,10 @@ RUN echo "209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c  ${VL
        /tmp/apply-vllm-long-prefill-jit.py \
        /tmp/apply-vllm-indexer-workspace.py \
        /tmp/apply-vllm-dsv4-kv-groups.py \
+       /tmp/apply-vllm-dcp-swa.py \
        /tmp/apply-vllm-dsv4-nvfp4.py \
+       /tmp/apply-vllm-dcp-dsv4.py \
+       /tmp/apply-vllm-dcp-rate-aware.py \
        /tmp/apply-flashinfer-dspark-sm121.py
 
 COPY scripts/start-native.sh /opt/ds4fv/bin/start-native
@@ -102,6 +117,9 @@ COPY scripts/release-warmup.py /opt/ds4fv/bin/release-warmup
 COPY scripts/container-healthcheck.py /opt/ds4fv/bin/container-healthcheck.py
 COPY tests/spark_exl3_no_gpu_smoke.py /opt/ds4fv/tests/spark_exl3_no_gpu_smoke.py
 COPY tests/spark_b12x_no_gpu_smoke.py /opt/ds4fv/tests/spark_b12x_no_gpu_smoke.py
+COPY tests/spark_dcp_swa_no_gpu_smoke.py /opt/ds4fv/tests/spark_dcp_swa_no_gpu_smoke.py
+COPY tests/spark_dcp_dsv4_no_gpu_smoke.py /opt/ds4fv/tests/spark_dcp_dsv4_no_gpu_smoke.py
+COPY tests/spark_dcp_rate_aware_no_gpu_smoke.py /opt/ds4fv/tests/spark_dcp_rate_aware_no_gpu_smoke.py
 RUN chmod 0755 /opt/ds4fv/bin/start-native /opt/ds4fv/bin/release-warmup
 
 # Keep the recipe identity in a metadata-only tail layer so changing the

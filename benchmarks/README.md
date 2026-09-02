@@ -27,6 +27,42 @@ verifier is off. The service
 must receive no unrelated traffic during a suite because DSpark acceptance is
 read from process-wide Prometheus counter deltas.
 
+### Auxiliary K6 content profile
+
+The frozen one-Spark image was also measured with fixed greedy K6 as an
+auxiliary content profile. This does not replace the qualified K3 default.
+Each entry is the median decode tok/s from five samples; structured normal and
+constrained arms retain half weight each in the aggregate score.
+
+| KV / arm | K3 | K6 | K6 delta |
+| --- | ---: | ---: | ---: |
+| FP8 weighted content score | 33.03 | 32.41 | -1.88% |
+| FP8 code | 40.89 | 40.66 | -0.55% |
+| FP8 reasoning | 40.61 | 41.36 | +1.86% |
+| FP8 creative prose | 24.87 | 21.27 | -14.47% |
+| FP8 short response | 36.93 | 43.63 | +18.14% |
+| FP8 exposition | 26.20 | 20.32 | -22.47% |
+| FP8 structured JSON, normal | 37.68 | 39.03 | +3.59% |
+| FP8 structured JSON, constrained | 37.45 | 41.49 | +10.80% |
+| FP8 multilingual | 24.15 | 19.36 | -19.83% |
+| FP8 Orchid | 50.77 | 70.29 | +38.45% |
+| NVFP4 weighted content score | 32.85 | 31.38 | -4.46% |
+| NVFP4 code | 41.35 | 39.97 | -3.32% |
+| NVFP4 reasoning | 39.29 | 39.94 | +1.65% |
+| NVFP4 creative prose | 23.71 | 19.81 | -16.45% |
+| NVFP4 short response | 36.80 | 43.32 | +17.70% |
+| NVFP4 exposition | 25.37 | 18.55 | -26.89% |
+| NVFP4 structured JSON, normal | 37.58 | 39.00 | +3.78% |
+| NVFP4 structured JSON, constrained | 38.26 | 37.18 | -2.81% |
+| NVFP4 multilingual | 25.48 | 19.99 | -21.54% |
+| NVFP4 Orchid | 50.67 | 69.95 | +38.05% |
+
+FP8 K6 passed all 40 semantic contracts and all 10 structured samples. NVFP4
+K6 passed structured 10/10 but scored 37/40 overall because three exposition
+samples missed the exact formatting contract; its K3 release profile remains
+40/40. The raw K6 and compact K3/K6 comparison JSON files live beside each
+primary one-Spark manifest.
+
 ## HTTP suite
 
 [`run-release-suite.sh`](../scripts/run-release-suite.sh) executes the same
@@ -45,6 +81,11 @@ core workload for each role:
 - One exact DeepSeek V4 `get_weather({"location":"Berlin"})` tool-call
   contract, followed by a cold exact-128K six-needle retrieval and a 20-request
   C4 post-long-context soak.
+- The complete default `tool-eval-bench` `2.3.2.dev3+g5df1e9e0c` matrix:
+  TC-01 through TC-69,
+  thinking enabled, greedy temperature, one request at a time, and the stable
+  138-point score contract. The runner records points, normalized score, and
+  pass/partial/fail counts in both `tool-eval-bench.json` and the manifest.
 - Both Vision roles additionally read ordered numbered fixtures at 1, 4, and
   16 images, reject image 17 with HTTP 400, record real cache hits on an exact
   multimodal replay, and correctly read a changed-image request sharing the
@@ -66,7 +107,13 @@ scripts/run-release-suite.sh
 Run it again with `ROLE=exl3-vision` against the primary one-Spark API, once
 with `KV_CACHE_DTYPE=fp8` and once with `KV_CACHE_DTYPE=nvfp4_ds_mla`.
 The runner refuses a non-empty output directory and marks its manifest passed
-only after every command exits successfully.
+only after every command exits successfully. It resolves `tool-eval-bench`
+from `PATH`, the adjacent `../tool-eval-bench` checkout through `uv`, or an
+explicit `TOOL_EVAL_BENCH=/path/to/tool-eval-bench`. It fails before creating
+release evidence unless that executable reports the pinned dev3 version above;
+`TOOL_EVAL_REQUIRED_VERSION` is available only for an intentional future
+matrix-version update. Run release qualification from the workstation so an
+older Spark-local installation cannot silently score the model.
 
 ## Non-HTTP release evidence
 

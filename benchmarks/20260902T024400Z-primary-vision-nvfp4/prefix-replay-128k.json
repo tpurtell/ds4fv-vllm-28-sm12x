@@ -1,0 +1,79 @@
+{
+  "schema": "ds4fv-prefix-replay.v1",
+  "passed": true,
+  "provenance": {
+    "role": "exl3-vision",
+    "image_id": "sha256:83fdbf8cf461e83c6acd3c90677feb12b08ad10a5a5a3db5299efbe3899ad227",
+    "recipe_commit": "6407692e58709c5b7082af39bfaa4d99b7dfaae1",
+    "model": "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1"
+  },
+  "target_prompt_tokens": 128000,
+  "cache_salt": "3b800bdb559b4c4a9e46d0c8a029f7d0",
+  "placements": [
+    {
+      "fraction": 0.05,
+      "key": "CINDER-05",
+      "value": "azurite-4831",
+      "token_offset_before_record": 6400
+    },
+    {
+      "fraction": 0.25,
+      "key": "JUNIPER-25",
+      "value": "topaz-7614",
+      "token_offset_before_record": 32000
+    },
+    {
+      "fraction": 0.5,
+      "key": "LANTERN-50",
+      "value": "cobalt-2097",
+      "token_offset_before_record": 64000
+    },
+    {
+      "fraction": 0.75,
+      "key": "MARBLE-75",
+      "value": "saffron-6382",
+      "token_offset_before_record": 96000
+    },
+    {
+      "fraction": 0.95,
+      "key": "ORBIT-95",
+      "value": "willow-1459",
+      "token_offset_before_record": 121600
+    },
+    {
+      "fraction": 0.99,
+      "key": "QUARTZ-99",
+      "value": "indigo-8726",
+      "token_offset_before_record": 126720
+    }
+  ],
+  "prefix_cache_hits_before": 807680.0,
+  "prefix_cache_hits_after": 935424.0,
+  "prefix_cache_hit_delta": 127744.0,
+  "passes": [
+    {
+      "pass": 1,
+      "passed": true,
+      "ttft_seconds": 117.32407560199499,
+      "request_seconds": 120.31227411795408,
+      "usage": {
+        "prompt_tokens": 128000,
+        "total_tokens": 128128,
+        "completion_tokens": 128
+      },
+      "output": "CINDER-05=azurite-4831\nJUNIPER-25=topaz-7614\nLANTERN-50=cobalt-2097\nMARBLE-75=saffron-6382\nORBIT-95=willow-1459\nQUARTZ-99=indigo-8726\n</think>CINDER-05=azurite-4831\nJUNIPER-25=topaz-7614\nLANTERN-50=cobalt-2097\nMARBLE-75=saffron-6382\nORBIT-95=willow-1459"
+    },
+    {
+      "pass": 2,
+      "passed": true,
+      "ttft_seconds": 0.8214786220341921,
+      "request_seconds": 3.706552776042372,
+      "usage": {
+        "prompt_tokens": 128000,
+        "total_tokens": 128128,
+        "completion_tokens": 128
+      },
+      "output": "AUDIT RECORD: CINDER-05=azurite-4831\nAUDIT RECORD: JUNIPER-25=topaz-7614\nAUDIT RECORD: LANTERN-50=cobalt-2097\nAUDIT RECORD: MARBLE-75=saffron-6382\nAUDIT RECORD: ORBIT-95=willow-1459\nAUDIT RECORD: QUARTZ-99=indigo-8726\n</think>AUDIT RECORD: CINDER-05=azurite-4831\nAUD"
+    }
+  ]
+}
