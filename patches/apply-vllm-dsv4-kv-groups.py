@@ -69,7 +69,11 @@ def main() -> None:
     # A group-count ceiling bounds scheduler metadata and Python BlockPool
     # overhead. Candidate strides come from real tuple/page boundaries, so the
     # result is deterministic and contains no heuristic byte increments.
-    max_groups = 48
+    # More groups reduce slab padding but add one block-table/metadata path per
+    # group on every decode step. Twelve preserves the established five-group
+    # Vision layout while still allowing the optimizer to improve other cache
+    # mixes; the 14-group diagnostic regressed matched C4 decode by 9.8%.
+    max_groups = 12
     tuple_counts = [
         spec.get_num_layer_tuples() for spec in grouped_specs
     ]
