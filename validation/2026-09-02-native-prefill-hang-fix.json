@@ -1,0 +1,98 @@
+{
+  "schema": "ds4fv-native-prefill-hang-fix.v1",
+  "disposition": "source-fix-qualified-for-final-candidate-freeze",
+  "candidate": {
+    "recipe_commit": "693dd2267172ff0e8fb05c78592545d275ed3991",
+    "image": "ds4fv-vllm-28-sm12x:prod-candidate-693dd22",
+    "image_id": "sha256:a45c31dd522f23cb2ff7706217ae50a76218c5d89d1cb0329517e2ca07a4e777",
+    "architecture": "arm64",
+    "gpu": "NVIDIA GB10 / SM121",
+    "hosts": [
+      "emu",
+      "kiwi"
+    ]
+  },
+  "failure": {
+    "rejected_image_id": "sha256:70a5baf530a8b461a6750cac040356112c365b41e943f509570f8ec713994a70",
+    "symptom": "one TP rank remained in FlashInfer sparse MLA paged-attention prefill while its peer advanced to the following tensor-parallel all-reduce",
+    "tp0_top_frames": [
+      "ncclAllReduce",
+      "tensor_model_parallel_all_reduce",
+      "DeepseekV4FlashInferSM120Attention._b12x_o_proj"
+    ],
+    "tp1_top_frames": [
+      "flashinfer.mla._sparse_mla_sm120._paged_attention",
+      "_trtllm_batch_decode_sparse_mla_sm120",
+      "DeepseekV4FlashInferSM120Attention._forward_prefill"
+    ]
+  },
+  "fix": {
+    "native_prefill_backend": "B12x nonpersistent unified multi-group sparse MLA",
+    "routed_widths": [
+      128,
+      512
+    ],
+    "cache_forms": [
+      "single",
+      "dual"
+    ],
+    "unchanged": [
+      "FlashInfer split sparse MLA decode remains the default",
+      "B12x compressed sparse MLA decode remains opt-in",
+      "DSpark drafting and verification policy"
+    ]
+  },
+  "numeric_kernel": {
+    "shape": "32 heads, 512 main indices plus 512 extra indices",
+    "cosine": 0.99984747,
+    "max_abs": 0.00061035,
+    "max_lse_abs": 0.00000191,
+    "passed": true
+  },
+  "native_target_only": {
+    "trigger_decode_runs": 4,
+    "trigger_decode_median_tps": 28.204047460741496,
+    "vision_cycles": 30,
+    "vision_requests": 90,
+    "all_outputs_exact": true,
+    "healthy_after": true
+  },
+  "native_k3": {
+    "startup_gate_passed": true,
+    "vision_cycles": 30,
+    "vision_requests": 90,
+    "post_128k_vision_cycles": 10,
+    "post_128k_vision_requests": 30,
+    "all_outputs_exact": true,
+    "long_context": {
+      "prompt_tokens": 128000,
+      "needles_passed": 6,
+      "needles_total": 6,
+      "ttft_seconds": 66.174,
+      "prompt_tokens_per_second": 1934.294436
+    },
+    "warm_restart_passed": true,
+    "first_lifecycle_post_ready_jit": 0,
+    "restart_lifecycle_post_ready_jit": 0,
+    "healthy_after": true
+  },
+  "exl3_regression": {
+    "startup_gate_passed": true,
+    "long_context_needles_passed": 6,
+    "long_context_needles_total": 6,
+    "long_context_ttft_seconds": 120.535,
+    "c4_runs": 20,
+    "c4_median_tps": 152.98756244995747,
+    "prior_c4_median_tps": 156.3784,
+    "delta_percent": -2.168354,
+    "median_accepted_draft_rate": 0.7115044247787611,
+    "median_committed_tokens_per_target_pass": 4.557522123893806,
+    "post_ready_jit": 0,
+    "healthy_after": true,
+    "passed_five_percent_gate": true
+  },
+  "release_suite": {
+    "run": false,
+    "reason": "full native Vision and EXL3 suites remain deferred until the final documentation-bearing candidate is rebuilt and frozen by digest"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "ds4fv-release-startup-jit-audit.v1",
+  "container": "ds4fv-prod-693dd22-k3-head",
+  "image": "ds4fv-vllm-28-sm12x:prod-candidate-693dd22",
+  "image_id": "sha256:a45c31dd522f23cb2ff7706217ae50a76218c5d89d1cb0329517e2ca07a4e777",
+  "container_state": "running",
+  "health_status_at_audit": "healthy",
+  "ready_marker": "2026-09-02T00:48:15.594561986Z DS4FV release startup warmup complete; container is ready.",
+  "pre_ready_jit_count": 23,
+  "pre_ready_jit_kernels": [
+    "_compute_global_topk_indices_and_lens_kernel",
+    "_compute_local_logits_stats_kernel",
+    "_compute_swa_indices_and_lens_kernel",
+    "_gumbel_sample_kernel",
+    "_pack_topk_routes_post_prefix_kernel",
+    "_pack_topk_routes_small_prefix_kernel",
+    "_prepare_dflash_inputs_kernel",
+    "_rejection_kernel",
+    "_resample_kernel",
+    "_w4a16_route_count_kernel",
+    "_w4a16_route_prefix_from_counts_kernel",
+    "mhc_pre_big_fuse_broadcast_with_norm_tilelang",
+    "mhc_pre_big_fuse_with_norm_tilelang"
+  ],
+  "post_ready_request_count": 7,
+  "post_ready_health_200_count": 4,
+  "post_ready_jit_count": 0,
+  "post_ready_jit_kernels": [],
+  "passed": true
+}

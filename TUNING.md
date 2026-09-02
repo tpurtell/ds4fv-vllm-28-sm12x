@@ -200,6 +200,12 @@ is retained in this repository.
   Vision hot path, then retain it as opt-in because its 19.0%-faster isolated
   kernel was 1.62% slower on the matched full-model content score. Evidence is
   retained in `validation/2026-09-02-b12x-compressed-mla.md`.
+- **Passed:** Diagnose the repeated native Vision wedge to a rank-asymmetric
+  FlashInfer sparse-MLA prefill hang, route every native 128/512-wide prefill
+  form through B12x, and pass target-only plus K3 stress, exact 128K retrieval,
+  warm restart, zero-late-JIT, and the EXL3 5% proportional regression gate.
+  Evidence is retained in
+  `validation/2026-09-02-native-prefill-hang-fix.md`.
 - **Passed:** Source-check and minimally exercise the frozen-image benchmark
   clients without running a premature full suite; the development-only smoke
   is retained in `validation/2026-09-02-release-harness-smoke.md`.

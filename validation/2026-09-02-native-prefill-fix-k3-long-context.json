@@ -1,0 +1,94 @@
+{
+  "schema": "ds4fv-cold-multi-needle.v1",
+  "passed": true,
+  "provenance": {
+    "role": "native-vision",
+    "image_id": "sha256:a45c31dd522f23cb2ff7706217ae50a76218c5d89d1cb0329517e2ca07a4e777",
+    "recipe_commit": "693dd2267172ff0e8fb05c78592545d275ed3991",
+    "model": "deepseek-v4-flash-vision-exp-native"
+  },
+  "target_prompt_tokens": 128000,
+  "nonce": "native-vision-b355acf3f18a4af9abb9f95b3d7fdbef",
+  "cache_salt": "665e229f51b94ff0b45a42f632ef47ea",
+  "prompt_sha256": "8972237feac1994a7ae5c907d4275188c8d88a43eb217d7dbd3484bb0dbd97e9",
+  "placements": [
+    {
+      "fraction": 0.05,
+      "key": "CINDER-05",
+      "value": "azurite-4831",
+      "token_offset_before_record": 6400
+    },
+    {
+      "fraction": 0.25,
+      "key": "JUNIPER-25",
+      "value": "topaz-7614",
+      "token_offset_before_record": 32000
+    },
+    {
+      "fraction": 0.5,
+      "key": "LANTERN-50",
+      "value": "cobalt-2097",
+      "token_offset_before_record": 64000
+    },
+    {
+      "fraction": 0.75,
+      "key": "MARBLE-75",
+      "value": "saffron-6382",
+      "token_offset_before_record": 96000
+    },
+    {
+      "fraction": 0.95,
+      "key": "ORBIT-95",
+      "value": "willow-1459",
+      "token_offset_before_record": 121600
+    },
+    {
+      "fraction": 0.99,
+      "key": "QUARTZ-99",
+      "value": "indigo-8726",
+      "token_offset_before_record": 126720
+    }
+  ],
+  "checks": [
+    {
+      "key": "CINDER-05",
+      "expected": "azurite-4831",
+      "passed": true
+    },
+    {
+      "key": "JUNIPER-25",
+      "expected": "topaz-7614",
+      "passed": true
+    },
+    {
+      "key": "LANTERN-50",
+      "expected": "cobalt-2097",
+      "passed": true
+    },
+    {
+      "key": "MARBLE-75",
+      "expected": "saffron-6382",
+      "passed": true
+    },
+    {
+      "key": "ORBIT-95",
+      "expected": "willow-1459",
+      "passed": true
+    },
+    {
+      "key": "QUARTZ-99",
+      "expected": "indigo-8726",
+      "passed": true
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 128000,
+    "total_tokens": 128128,
+    "completion_tokens": 128
+  },
+  "build_seconds": 0.701,
+  "ttft_seconds": 66.174,
+  "stream_after_first_token_seconds": 2.526,
+  "request_seconds": 68.7,
+  "output": "CINDER-05=azurite-4831\nJUNIPER-25=topaz-7614\nLANTERN-50=cobalt-2097\nMARBLE-75=saffron-6382\nORBIT-95=willow-1459\nQUARTZ-99=indigo-8726\n```\n</details>\n\n---\n\n### 2.3.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2"
+}
