@@ -20,7 +20,8 @@ def replace_once(path: Path, old: str, new: str, label: str) -> None:
 def main() -> None:
     if len(sys.argv) != 2:
         raise SystemExit("usage: apply-vllm-indexer-workspace.py VLLM_ROOT")
-    path = Path(sys.argv[1]) / "v1/attention/backends/mla/indexer.py"
+    root = Path(sys.argv[1])
+    path = root / "v1/attention/backends/mla/indexer.py"
     replace_once(
         path,
         "def get_max_prefill_buffer_size(vllm_config: VllmConfig):\n"
@@ -83,6 +84,49 @@ def main() -> None:
         "        )\n"
         "        min_decode_len = int(decode_lens_cpu.min().item())\n",
         "flattened decode row bound",
+    )
+    sparse_mla_path = root / "models/deepseek_v4/sparse_mla.py"
+    replace_once(
+        sparse_mla_path,
+        "            self.c128a_max_compressed = c128a_max_compressed\n"
+        "            self.c128a_global_decode_buffer = torch.empty(\n"
+        "                (max_num_batched_tokens, c128a_max_compressed),\n"
+        "                dtype=torch.int32,\n"
+        "                device=device,\n"
+        "            )\n",
+        "            self.c128a_max_compressed = c128a_max_compressed\n"
+        "            # Global C128 indices are a decode-only output. Bound their\n"
+        "            # rows by serving concurrency and graph padding; the distinct\n"
+        "            # prefill buffer below correctly retains the full 8K budget.\n"
+        "            num_speculative_tokens = (\n"
+        "                vllm_config.speculative_config.num_speculative_tokens\n"
+        "                if vllm_config.speculative_config is not None\n"
+        "                else 0\n"
+        "            )\n"
+        "            self.c128a_max_decode_tokens = max(\n"
+        "                vllm_config.scheduler_config.max_num_seqs\n"
+        "                * (num_speculative_tokens + 1),\n"
+        "                vllm_config.compilation_config.max_cudagraph_capture_size\n"
+        "                or 0,\n"
+        "            )\n"
+        "            self.c128a_global_decode_buffer = torch.empty(\n"
+        "                (self.c128a_max_decode_tokens, c128a_max_compressed),\n"
+        "                dtype=torch.int32,\n"
+        "                device=device,\n"
+        "            )\n",
+        "C128 decode-only metadata rows",
+    )
+    replace_once(
+        sparse_mla_path,
+        "        num_total = num_decode_tokens + num_prefill_tokens\n"
+        "        if num_total == 0:\n",
+        "        num_total = num_decode_tokens + num_prefill_tokens\n"
+        "        assert num_decode_tokens <= self.c128a_max_decode_tokens, (\n"
+        "            num_decode_tokens,\n"
+        "            self.c128a_max_decode_tokens,\n"
+        "        )\n"
+        "        if num_total == 0:\n",
+        "C128 decode row bound",
     )
 
 

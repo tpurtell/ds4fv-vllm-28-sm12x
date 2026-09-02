@@ -182,6 +182,13 @@ def main() -> None:
     assert "num_decode_tokens <= self.max_decode_tokens" in (
         indexer_workspace_patch
     )
+    assert "self.c128a_max_decode_tokens = max(" in indexer_workspace_patch
+    assert "num_decode_tokens <= self.c128a_max_decode_tokens" in (
+        indexer_workspace_patch
+    )
+    assert "prefill buffer below correctly retains the full 8K budget" in (
+        indexer_workspace_patch
+    )
 
     vision = (
         ROOT / "overlay/vllm/model_executor/models/deepseek_v4_vision.py"

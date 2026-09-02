@@ -85,7 +85,8 @@ is retained in this repository.
   model-length multiplier. Query rows retain independent logits-budget
   chunking; its flattened decode block table is likewise bounded by live
   target/draft rows plus graph padding instead of the 8K prefill budget, with
-  an explicit runtime bound check.
+  an explicit runtime bound check. C128 global-decode metadata uses the same
+  bound while its genuinely 8K-wide prefill matrix remains unchanged.
 
 - **Two-rail networking:** Each Spark exposes two active RoCEv2 rails, with GID
   index 3 on `rocep1s0f0/1` and `roceP2p1s0f0/1`. On the same five warmed text
