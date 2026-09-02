@@ -220,7 +220,9 @@ is retained in this repository.
   The wrapper additionally maps the quant derivative's `model.layers.*` expert
   payloads under `language_model.model.*` while preserving its ordinary
   `layers.*` mapping; both InstantTensor and the stock loader exposed the same
-  missing namespace before this correction.
+  missing namespace before this correction. Its one-Spark Vision default also
+  raises the memory reservation from 0.85 to 0.86 after the full 128K profile
+  measured 7.16 GiB available for a 7.38 GiB KV-cache requirement.
 - **Passed:** Source-check and minimally exercise the frozen-image benchmark
   clients without running a premature full suite; the development-only smoke
   is retained in `validation/2026-09-02-release-harness-smoke.md`.

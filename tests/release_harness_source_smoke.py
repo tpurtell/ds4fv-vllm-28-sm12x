@@ -191,6 +191,11 @@ def main() -> None:
         ):
             assert fragment in host_launcher
 
+    one_spark_launcher = (ROOT / "scripts/launch-one-spark-exl3.sh").read_text()
+    assert 'if [[ "${model_kind}" == vision ]]' in one_spark_launcher
+    assert "gpu_memory_utilization=0.86" in one_spark_launcher
+    assert "gpu_memory_default=0.86" in launcher
+
     audit = (ROOT / "scripts/audit-startup-jit.py").read_text()
     assert "ds4fv-release-startup-jit-audit.v1" in audit
     assert '"passed": not post_ready_jit' in audit

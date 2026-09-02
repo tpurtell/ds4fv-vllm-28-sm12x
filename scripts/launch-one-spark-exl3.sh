@@ -8,6 +8,16 @@ container_name=${CONTAINER_NAME:-ds4fv-exl3}
 hf_cache=${HF_CACHE:-/home/tj/.cache/huggingface}
 model_repo=${MODEL_REPO:-}
 model_revision=${MODEL_REVISION:-}
+model_kind=${MODEL_KIND:-text}
+gpu_memory_utilization=${GPU_MEMORY_UTILIZATION:-}
+
+if [[ -z "${gpu_memory_utilization}" ]]; then
+  if [[ "${model_kind}" == vision ]]; then
+    gpu_memory_utilization=0.86
+  else
+    gpu_memory_utilization=0.85
+  fi
+fi
 
 remote() {
   local host=$1 remote_command
@@ -37,7 +47,7 @@ remote "${spark_host}" docker run -d \
   --ulimit stack=67108864:67108864 \
   -v "${hf_cache}:/cache/huggingface" \
   -e DS4FV_ROLE=exl3 \
-  -e MODEL_KIND="${MODEL_KIND:-text}" \
+  -e MODEL_KIND="${model_kind}" \
   -e HF_HOME=/cache/huggingface \
   -e HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}" \
   -e TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-1}" \
@@ -66,7 +76,7 @@ remote "${spark_host}" docker run -d \
   -e MAX_MODEL_LEN="${MAX_MODEL_LEN:-131072}" \
   -e MAX_NUM_SEQS="${MAX_NUM_SEQS:-4}" \
   -e MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-8192}" \
-  -e GPU_MEMORY_UTILIZATION="${GPU_MEMORY_UTILIZATION:-0.85}" \
+  -e GPU_MEMORY_UTILIZATION="${gpu_memory_utilization}" \
   -e KV_CACHE_DTYPE="${KV_CACHE_DTYPE:-fp8}" \
   -e ENABLE_PREFIX_CACHING="${ENABLE_PREFIX_CACHING:-1}" \
   "${image}" >/dev/null
