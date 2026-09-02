@@ -206,6 +206,12 @@ is retained in this repository.
   warm restart, zero-late-JIT, and the EXL3 5% proportional regression gate.
   Evidence is retained in
   `validation/2026-09-02-native-prefill-hang-fix.md`.
+- **Ready for qualification:** The one-Spark Vision EXL3 profile pins
+  `wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1` at
+  `8aab722f04f7e8963af83de5acb16138474e0228`, restores its missing Vision
+  architecture/dimensions at launch, uses the public one-grid B12x mixed-route
+  path for its K2/K3 target layers, retains uniform-K2 draft layers, and
+  defaults to fixed greedy K3 with prefix caching off.
 - **Passed:** Source-check and minimally exercise the frozen-image benchmark
   clients without running a premature full suite; the development-only smoke
   is retained in `validation/2026-09-02-release-harness-smoke.md`.
@@ -217,4 +223,5 @@ is retained in this repository.
   `validation/2026-09-02-native-vision-k3-reliability.md`.
 - Freeze one committed production-candidate digest with zero post-ready JIT,
   then run the separate
-  native Vision TP2 and one-Spark EXL3 release suites against that exact image.
+  native Vision TP2, one-Spark text EXL3, and one-Spark Vision EXL3 release
+  suites against that exact image.

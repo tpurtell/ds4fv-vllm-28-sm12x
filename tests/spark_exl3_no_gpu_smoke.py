@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""No-GPU validation for the v3 projection-mixed EXL3 integration."""
+"""No-GPU validation for the qualified projection-mixed EXL3 profiles."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from flashinfer.jit.mla import gen_sparse_mla_sm120_module
 
 model_path = os.environ.get("EXL3_MODEL_PATH")
 if not model_path:
-    raise SystemExit("EXL3_MODEL_PATH must point to the pinned v3 snapshot")
+    raise SystemExit("EXL3_MODEL_PATH must point to a pinned EXL3 snapshot")
 
 assert get_quantization_config("exl3") is Exl3Config
 hf_config = AutoConfig.from_pretrained(model_path)
@@ -27,24 +27,29 @@ assert quant_config.standard_fused_moe
 assert sorted(quant_config.standard_projection_bits_by_layer) == list(range(46))
 for layer_index, rates in quant_config.standard_projection_bits_by_layer.items():
     assert len(rates) == 256, (layer_index, len(rates))
-    assert {bit for triple in rates for bit in triple} == {2, 3}
 
-# Backbone plus the three D2.2 draft layers.
-assert sum(
-    rates[0] == 3
-    for layer in quant_config.standard_projection_bits_by_layer.values()
-    for rates in layer
-) == 705
-assert sum(
-    rates[1] == 3
-    for layer in quant_config.standard_projection_bits_by_layer.values()
-    for rates in layer
-) == 1176
-assert sum(
-    rates[2] == 3
-    for layer in quant_config.standard_projection_bits_by_layer.values()
-    for rates in layer
-) == 1882
+projection_k3_totals = tuple(
+    sum(
+        rates[projection_index] == 3
+        for layer in quant_config.standard_projection_bits_by_layer.values()
+        for rates in layer
+    )
+    for projection_index in range(3)
+)
+profile_by_totals = {
+    (705, 1176, 1882): "text-k2.1-d2.2-v3",
+    (1238, 2064, 3303): "vision-k2.2-d2-v1",
+}
+profile = profile_by_totals.get(projection_k3_totals)
+assert profile is not None, projection_k3_totals
+
+for layer_index, rates in quant_config.standard_projection_bits_by_layer.items():
+    expected_bits = (
+        {2}
+        if profile == "vision-k2.2-d2-v1" and layer_index >= 43
+        else {2, 3}
+    )
+    assert {bit for triple in rates for bit in triple} == expected_bits, layer_index
 
 source = inspect.getsource(Exl3MoEMethod)
 assert "api.prepare_weights" in source
@@ -59,6 +64,5 @@ jit_source = inspect.getsource(gen_sparse_mla_sm120_module)
 assert '"sparse_mla_sm120_ds4fv_k192_v1"' in jit_source
 
 print(
-    "EXL3 metadata: 46 layers x 256 projection-mixed experts; "
-    "public B12x path only"
+    f"EXL3 metadata: {profile}; 46 layers x 256 experts; public B12x path only"
 )

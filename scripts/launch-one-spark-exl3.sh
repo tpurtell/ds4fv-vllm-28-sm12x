@@ -6,8 +6,8 @@ spark_host=${SPARK_HOST:-dodo}
 image=${DS4FV_IMAGE:-ds4fv-vllm-28-sm12x:exl3-dev}
 container_name=${CONTAINER_NAME:-ds4fv-exl3}
 hf_cache=${HF_CACHE:-/home/tj/.cache/huggingface}
-model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2.1-D2.2-calibrated-v3}
-model_revision=${MODEL_REVISION:-7827301eed170e2a5e394f45a13cc66561c601ed}
+model_repo=${MODEL_REPO:-}
+model_revision=${MODEL_REVISION:-}
 
 remote() {
   local host=$1 remote_command
@@ -37,6 +37,7 @@ remote "${spark_host}" docker run -d \
   --ulimit stack=67108864:67108864 \
   -v "${hf_cache}:/cache/huggingface" \
   -e DS4FV_ROLE=exl3 \
+  -e MODEL_KIND="${MODEL_KIND:-text}" \
   -e HF_HOME=/cache/huggingface \
   -e HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}" \
   -e TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-1}" \
@@ -54,7 +55,7 @@ remote "${spark_host}" docker run -d \
   -e PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}" \
   -e LOAD_FORMAT="${LOAD_FORMAT:-instanttensor}" \
   -e ENABLE_DSPARK="${ENABLE_DSPARK:-1}" \
-  -e DSPARK_TOKENS="${DSPARK_TOKENS:-5}" \
+  -e DSPARK_TOKENS="${DSPARK_TOKENS:-}" \
   -e DRAFT_SAMPLE_METHOD="${DRAFT_SAMPLE_METHOD:-greedy}" \
   -e DSPARK_ADAPTIVE_VERIFICATION="${DSPARK_ADAPTIVE_VERIFICATION:-0}" \
   -e DS4FV_STARTUP_WARMUP="${DS4FV_STARTUP_WARMUP:-1}" \

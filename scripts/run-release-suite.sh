@@ -4,7 +4,7 @@ set -Eeuo pipefail
 # HTTP-only release orchestrator. It never starts vLLM, Docker, or GPU code;
 # point it at a service already launched on the frozen Spark image.
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-role=${ROLE:?ROLE must be native-vision or exl3}
+role=${ROLE:?ROLE must be native-vision, exl3, or exl3-vision}
 base_url=${BASE_URL:-http://127.0.0.1:8000}
 model=${MODEL:?MODEL must be the served model name}
 image_id=${IMAGE_ID:?IMAGE_ID must be the frozen sha256 image ID}
@@ -16,11 +16,14 @@ case "${role}" in
   native-vision)
     dspark_tokens=${DSPARK_TOKENS:-3}
     ;;
+  exl3-vision)
+    dspark_tokens=${DSPARK_TOKENS:-3}
+    ;;
   exl3)
     dspark_tokens=${DSPARK_TOKENS:-5}
     ;;
   *)
-    echo "ROLE must be native-vision or exl3" >&2
+    echo "ROLE must be native-vision, exl3, or exl3-vision" >&2
     exit 64
     ;;
 esac
@@ -90,7 +93,7 @@ python3 "${script_dir}/test-tool-call.py" \
   "${common[@]}" \
   --output "${output_root}/tool-call.json"
 
-if [[ "${role}" == native-vision ]]; then
+if [[ "${role}" == native-vision || "${role}" == exl3-vision ]]; then
   python3 "${script_dir}/test-native-vision-vllm.py" \
     --base-url "${base_url}" \
     --model "${model}" \

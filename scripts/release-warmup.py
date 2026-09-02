@@ -156,7 +156,7 @@ def main() -> None:
     parser.add_argument(
         "--role",
         required=True,
-        choices=("native-text", "native-vision", "exl3"),
+        choices=("native-text", "native-vision", "exl3", "exl3-vision"),
     )
     parser.add_argument(
         "--ready-timeout",
@@ -198,7 +198,9 @@ def main() -> None:
     # one sampled target token and the draft depth land exactly on each
     # power-of-two specialization from 8 through 256.
     if os.getenv("ENABLE_DSPARK", "1") == "1":
-        default_draft_tokens = 3 if args.role == "native-vision" else 5
+        default_draft_tokens = (
+            3 if args.role in ("native-vision", "exl3-vision") else 5
+        )
         raw_draft_tokens = os.getenv("DSPARK_TOKENS", "").strip()
         draft_tokens = (
             int(raw_draft_tokens) if raw_draft_tokens else default_draft_tokens
@@ -400,7 +402,7 @@ def main() -> None:
     if not (tool_result["choices"][0].get("message", {}).get("tool_calls") or []):
         raise SystemExit("startup tool-parser warmup produced no tool call")
 
-    if args.role == "native-vision":
+    if args.role in ("native-vision", "exl3-vision"):
         image_url = png_data_url()
         image_counts = (1, 4, 16)
         for image_count in image_counts:

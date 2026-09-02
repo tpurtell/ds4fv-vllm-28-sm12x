@@ -61,7 +61,7 @@ ARMS = {
     ),
     "fable": PromptArm(
         "creative-prose",
-        "Write a self-contained fable of 140 to 180 words about two parrots who disagree "
+        "Write a self-contained fable of 150 to 165 words about two parrots who disagree "
         "about sharing credit. End with one sentence that starts with 'Moral:' and "
         "explicitly includes both words 'share' and 'credit'.",
         256,
@@ -98,7 +98,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://127.0.0.1:8000/v1")
     parser.add_argument("--model", required=True)
-    parser.add_argument("--role", choices=("native-vision", "exl3"))
+    parser.add_argument(
+        "--role", choices=("native-vision", "exl3", "exl3-vision")
+    )
     parser.add_argument("--image-id")
     parser.add_argument("--recipe-commit")
     parser.add_argument("--repeats", type=int, default=5)

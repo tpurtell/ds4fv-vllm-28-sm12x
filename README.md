@@ -132,11 +132,25 @@ above the older probabilistic-K5 result and 1.88% above vLLM's stock adaptive
 K5; the [matched content qualification](validation/2026-09-02-exl3-greedy-adaptive.md)
 also favored fixed K5 by 4.85%.
 
+The Vision K2.2/D2-v1 profile is selected explicitly and defaults to fixed
+greedy K3, disables prefix caching, injects the checkpoint's missing Vision
+configuration, and gates readiness on 1/4/16-image requests:
+
+```bash
+SPARK_HOST=dodo \
+MODEL_KIND=vision \
+DS4FV_IMAGE=ds4fv-vllm-28-sm12x:prod-candidate \
+scripts/launch-one-spark-exl3.sh
+```
+
+It serves as `deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1` by default.
+
 ## Release benchmarks
 
 The frozen-image harness is documented in
 [benchmarks/README.md](benchmarks/README.md). It runs separate native Vision
-TP2 and one-Spark EXL3 suites with code-agent decode/concurrency and context
+TP2, one-Spark text EXL3, and one-Spark Vision EXL3 suites with code-agent
+decode/concurrency and context
 depth curves, unique 8K--128K prefill, the weighted semantic/structured blend,
 tool use, 128K retrieval, role-specific Vision or prefix-cache checks, and a
 post-long-context C4 soak; full runs begin only after both roles use one exact

@@ -116,7 +116,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
     parser.add_argument("--model", required=True)
-    parser.add_argument("--role", required=True, choices=("native-vision", "exl3"))
+    parser.add_argument(
+        "--role", required=True, choices=("native-vision", "exl3", "exl3-vision")
+    )
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--recipe-commit", required=True)
     parser.add_argument(

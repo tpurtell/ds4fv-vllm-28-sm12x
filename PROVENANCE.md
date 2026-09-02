@@ -46,14 +46,21 @@ than reproducing Mia's projection-by-projection mixed-layer fallback.
   `9e165c30e2704aec5d9d593cce3eebd58bbef1cb`.
 - Native vision: `deepseek-ai/DeepSeek-V4-Flash-Vision-Exp` at
   `86f746b36186f0e567729a5c06a8c918caba82a9`.
-- Deferred EXL3: `wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2.1-D2.2-calibrated-v3`
-  after its quantization is complete.
+- Text EXL3: `wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2.1-D2.2-calibrated-v3`
+  at `7827301eed170e2a5e394f45a13cc66561c601ed`.
+- Vision EXL3: `wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1`
+  at `8aab722f04f7e8963af83de5acb16138474e0228`.
 
 The experimental Vision checkpoint declares `DeepseekV4ForCausalLM` despite
 shipping `vision.*`, `aligner.*`, image sentinel embeddings, and visual-routing
 biases. The recipe therefore forces the in-tree
 `DeepseekV4VisionForConditionalGeneration` architecture and does not enable
 `--trust-remote-code`.
+
+The Vision EXL3 derivative retains that incomplete base architecture metadata,
+so its first-class launch profile applies the same architecture override plus
+the pinned native Vision dimensions. Its 43 target layers use projection-mixed
+K2/K3 Trellis routes; the three DSpark draft layers remain uniform K2.
 
 The later upstream revision `31ea11185e11ccafad1c385104188a9e3b648ad6`
 changes only README/evaluation metadata relative to the pinned cached payload.

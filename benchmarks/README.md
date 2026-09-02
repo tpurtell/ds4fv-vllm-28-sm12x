@@ -15,6 +15,7 @@ or GPU code.
 | --- | --- | --- | --- | --- |
 | `native-vision` | two SM121 Sparks, TP2, merged dual rail | fixed greedy K3 | off | 16 images |
 | `exl3` | one SM121 Spark, mixed K2/K3 | fixed greedy K5 | on | n/a |
+| `exl3-vision` | one SM121 Spark, mixed K2/K3 | fixed greedy K3 | off | 16 images |
 
 Both profiles use FP8 KV cache, a maximum length of 131,072, four scheduler
 slots, an 8,192-token batch budget, and the stock split sparse-MLA decode path.
@@ -40,9 +41,10 @@ core workload for each role:
 - One exact DeepSeek V4 `get_weather({"location":"Berlin"})` tool-call
   contract, followed by a cold exact-128K six-needle retrieval and a 20-request
   C4 post-long-context soak.
-- Native Vision additionally reads ordered numbered fixtures at 1, 4, and 16
-  images and must reject image 17 with HTTP 400. EXL3 instead repeats one exact
-  128K prompt and must record real prefix-cache hits on the second pass.
+- Native Vision and Vision EXL3 additionally read ordered numbered fixtures at
+  1, 4, and 16 images and must reject image 17 with HTTP 400. Text EXL3 instead
+  repeats one exact 128K prompt and must record real prefix-cache hits on the
+  second pass.
 
 Example, after independently verifying the service is running the frozen
 image on the Sparks:
@@ -56,7 +58,8 @@ RECIPE_COMMIT=<40-hex-commit> \
 scripts/run-release-suite.sh
 ```
 
-Run it again with `ROLE=exl3`, the EXL3 served name, and the one-Spark API.
+Run it again with `ROLE=exl3` and `ROLE=exl3-vision`, the corresponding served
+names, and each one-Spark API.
 The runner refuses a non-empty output directory and marks its manifest passed
 only after every command exits successfully.
 

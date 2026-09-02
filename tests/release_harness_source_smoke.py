@@ -31,7 +31,7 @@ def main() -> None:
     assert content.ARMS["topic"].max_tokens == 256
     assert content.ARMS["multilingual"].max_tokens == 384
     assert "exactly three" in content.ARMS["code"].prompt
-    assert "140 to 180 words" in content.ARMS["fable"].prompt
+    assert "150 to 165 words" in content.ARMS["fable"].prompt
     assert "Moral:" in content.ARMS["fable"].prompt
     assert "正好四個單行條列" in content.ARMS["multilingual"].prompt
 
@@ -99,7 +99,7 @@ def main() -> None:
         assert fragment in launcher
     for fragment in (
         "run_vllm_with_warmup \"native-${model_kind}\"",
-        "run_vllm_with_warmup exl3",
+        'run_vllm_with_warmup "${warmup_role}"',
         "/tmp/ds4fv-release-ready",
         "DS4FV_STARTUP_WARMUP",
         "DS4FV release startup warmup complete; container is ready.",
@@ -108,7 +108,7 @@ def main() -> None:
 
     warmup = (ROOT / "scripts/release-warmup.py").read_text()
     for fragment in (
-        'choices=("native-text", "native-vision", "exl3")',
+        'choices=("native-text", "native-vision", "exl3", "exl3-vision")',
         "for block_size in (8, 16, 32, 64, 128, 256)",
         "args.base_url, model, 9500, args.request_timeout",
         "image_counts = (1, 4, 16)",
@@ -136,6 +136,18 @@ def main() -> None:
         assert script in runner
     assert "docker run" not in runner
     assert "vllm serve" not in runner
+    assert '"${role}" == native-vision || "${role}" == exl3-vision' in runner
+    assert '"${role}" == exl3' in runner
+
+    for fragment in (
+        "DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1",
+        "8aab722f04f7e8963af83de5acb16138474e0228",
+        "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1",
+        "DeepseekV4VisionForConditionalGeneration",
+        "warmup_role=exl3-vision",
+        'configure_dspark_args speculative_args "${dspark_default_tokens}"',
+    ):
+        assert fragment in launcher
 
     dockerfile = (ROOT / "Dockerfile").read_text()
     assert 'org.opencontainers.image.revision="${RECIPE_COMMIT}"' in dockerfile

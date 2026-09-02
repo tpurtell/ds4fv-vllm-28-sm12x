@@ -260,11 +260,36 @@ serve_model() {
 }
 
 serve_exl3() {
-  local model_repo model_revision served_name model_ref
-  local -a revision_args=() prefix_args=() speculative_args=()
-  model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2.1-D2.2-calibrated-v3}
-  model_revision=${MODEL_REVISION:-7827301eed170e2a5e394f45a13cc66561c601ed}
-  served_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-0731-exl3-k2.1-d2.2-v3}
+  local model_kind=${MODEL_KIND:-text}
+  local dspark_default_tokens=5
+  local model_repo model_revision served_name model_ref warmup_role
+  local -a revision_args=() prefix_args=() speculative_args=() vision_args=()
+  case "${model_kind}" in
+    text)
+      model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2.1-D2.2-calibrated-v3}
+      model_revision=${MODEL_REVISION:-7827301eed170e2a5e394f45a13cc66561c601ed}
+      served_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-0731-exl3-k2.1-d2.2-v3}
+      warmup_role=exl3
+      ;;
+    vision)
+      model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1}
+      model_revision=${MODEL_REVISION:-8aab722f04f7e8963af83de5acb16138474e0228}
+      served_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1}
+      warmup_role=exl3-vision
+      dspark_default_tokens=3
+      vision_args=(
+        --hf-overrides
+        '{"architectures":["DeepseekV4VisionForConditionalGeneration"],"is_mm_prefix_lm":true,"vision_text_sliding_window":128,"sliding_window":512,"vision_n_layers":32,"vision_dim":1024,"vision_n_heads":16,"vision_inter_dim":2816,"vision_patch_size":14,"vision_rope_theta":10000.0,"vision_downsample_ratio":3,"vision_max_n_token":384,"vision_min_pixels":147456,"vision_max_wh_ratio":8}'
+        --disable-chunked-mm-input
+        --mm-processor-cache-gb 0
+        --limit-mm-per-prompt '{"image":16}'
+      )
+      ;;
+    *)
+      echo "MODEL_KIND must be 'text' or 'vision', got '${model_kind}'" >&2
+      exit 64
+      ;;
+  esac
 
   if [[ -n "${MODEL_PATH:-}" ]]; then
     model_ref=${MODEL_PATH}
@@ -272,14 +297,14 @@ serve_exl3() {
     model_ref=${model_repo}
     revision_args=(--revision "${model_revision}")
   fi
-  if [[ "${ENABLE_PREFIX_CACHING:-1}" == 1 ]]; then
-    prefix_args=(--enable-prefix-caching)
-  else
+  if [[ "${model_kind}" == vision || "${ENABLE_PREFIX_CACHING:-1}" != 1 ]]; then
     prefix_args=(--no-enable-prefix-caching)
+  else
+    prefix_args=(--enable-prefix-caching)
   fi
-  configure_dspark_args speculative_args
+  configure_dspark_args speculative_args "${dspark_default_tokens}"
 
-  run_vllm_with_warmup exl3 vllm serve "${model_ref}" \
+  run_vllm_with_warmup "${warmup_role}" vllm serve "${model_ref}" \
     "${revision_args[@]}" \
     --served-model-name "${served_name}" \
     --host "${API_HOST:-0.0.0.0}" \
@@ -303,6 +328,7 @@ serve_exl3() {
     --generation-config vllm \
     --enable-chunked-prefill \
     "${prefix_args[@]}" \
+    "${vision_args[@]}" \
     "${speculative_args[@]}" \
     "$@"
 }
