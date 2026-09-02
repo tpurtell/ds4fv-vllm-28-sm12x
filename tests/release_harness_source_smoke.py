@@ -178,6 +178,7 @@ def main() -> None:
     assert "tests/spark_dcp_swa_no_gpu_smoke.py" in dockerfile
     assert "tests/spark_dcp_dsv4_no_gpu_smoke.py" in dockerfile
     assert "tests/spark_dcp_rate_aware_no_gpu_smoke.py" in dockerfile
+    assert "CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_dcp_swa_no_gpu_smoke.py" in dockerfile
 
     release_suite = (ROOT / "scripts/run-release-suite.sh").read_text()
     for fragment in (
@@ -198,7 +199,6 @@ def main() -> None:
         "effective_block_size = self.block_size * dcp_world_size",
         "kv_cache_spec.block_size * dcp_world_size",
         "(FullAttentionSpec, SlidingWindowSpec, MambaSpec)",
-        "(FullAttentionSpec, SlidingWindowSpec)",
         'admission_kwargs["dcp_world_size"]',
     ):
         assert fragment in dcp_swa_patch

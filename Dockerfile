@@ -120,7 +120,10 @@ COPY tests/spark_b12x_no_gpu_smoke.py /opt/ds4fv/tests/spark_b12x_no_gpu_smoke.p
 COPY tests/spark_dcp_swa_no_gpu_smoke.py /opt/ds4fv/tests/spark_dcp_swa_no_gpu_smoke.py
 COPY tests/spark_dcp_dsv4_no_gpu_smoke.py /opt/ds4fv/tests/spark_dcp_dsv4_no_gpu_smoke.py
 COPY tests/spark_dcp_rate_aware_no_gpu_smoke.py /opt/ds4fv/tests/spark_dcp_rate_aware_no_gpu_smoke.py
-RUN chmod 0755 /opt/ds4fv/bin/start-native /opt/ds4fv/bin/release-warmup
+RUN CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_dcp_swa_no_gpu_smoke.py \
+ && CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_dcp_dsv4_no_gpu_smoke.py \
+ && CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_dcp_rate_aware_no_gpu_smoke.py \
+ && chmod 0755 /opt/ds4fv/bin/start-native /opt/ds4fv/bin/release-warmup
 
 # Keep the recipe identity in a metadata-only tail layer so changing the
 # commit does not invalidate the pinned dependency and source-patch layers.

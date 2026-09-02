@@ -205,7 +205,9 @@ for fragment in (
 ):
     assert fragment in speculator, fragment
 for fragment in (
-    "self.block_tables.cp_size,",
+    "self.block_tables.kv_cache_cp_sizes[gid]",
+    "if self.block_tables.kv_cache_cp_sizes[gid] > 1",
+    "else 0",
     "ctx_virtual_block_size = block_size * CP_SIZE",
     "ctx_resident = is_valid_ctx & ctx_is_local & (ctx_block_id != 0)",
     "q_virtual_block_size = block_size * CP_SIZE",
