@@ -49,6 +49,33 @@ def patch_model_config(root: Path) -> None:
         '}\n',
         "DeepSeek-V4 checkpoint layer types",
     )
+    replace_once(
+        path,
+        '    missing = tuple(\n'
+        '        layer_type\n'
+        '        for layer_type in extra_layer_types\n'
+        '        if layer_type not in hf_configuration_utils.ALLOWED_LAYER_TYPES\n'
+        '    )\n'
+        '    if missing:\n'
+        '        hf_configuration_utils.ALLOWED_LAYER_TYPES += missing\n',
+        '    # Newer Transformers validates attention and MLP taxonomies with\n'
+        '    # separate tuples, while the vLLM 0.28 helper only extended the\n'
+        '    # legacy combined tuple. Keep all validator generations aligned.\n'
+        '    for attribute in (\n'
+        '        "ALLOWED_LAYER_TYPES",\n'
+        '        "ALLOWED_ATTN_LAYER_TYPES",\n'
+        '        "ALLOWED_MLP_LAYER_TYPES",\n'
+        '    ):\n'
+        '        allowed = getattr(hf_configuration_utils, attribute, ())\n'
+        '        missing = tuple(\n'
+        '            layer_type\n'
+        '            for layer_type in extra_layer_types\n'
+        '            if layer_type not in allowed\n'
+        '        )\n'
+        '        if missing:\n'
+        '            setattr(hf_configuration_utils, attribute, allowed + missing)\n',
+        "split Transformers layer-type validators",
+    )
 
     path = root / "model_executor/models/config.py"
     replace_once(

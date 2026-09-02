@@ -214,7 +214,9 @@ is retained in this repository.
   defaults to fixed greedy K3 with prefix caching off. Its first live startup
   also caught the checkpoint's `hash_moe`/`moe` values at Transformers' strict
   layer-type boundary; those values are now registered through vLLM's existing
-  per-model compatibility table rather than discarded.
+  per-model compatibility table rather than discarded. The compatibility
+  helper is extended for the pinned base's newer split attention/MLP validator
+  tuples, and the CUDA-hidden EXL3 smoke exercises the real vLLM config parser.
 - **Passed:** Source-check and minimally exercise the frozen-image benchmark
   clients without running a premature full suite; the development-only smoke
   is retained in `validation/2026-09-02-release-harness-smoke.md`.

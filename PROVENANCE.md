@@ -63,7 +63,9 @@ the pinned native Vision dimensions. Its 43 target layers use projection-mixed
 K2/K3 Trellis routes; the three DSpark draft layers remain uniform K2.
 The profile also preserves the checkpoint's `hash_moe`/`moe` layer taxonomy by
 registering those DeepSeek-V4-specific values with Transformers' strict layer
-type validator.
+type validator. The pinned base combines vLLM 0.28 with a newer Transformers
+validator split, so the compatibility helper updates the legacy combined tuple
+and the separate attention/MLP tuples.
 
 The later upstream revision `31ea11185e11ccafad1c385104188a9e3b648ad6`
 changes only README/evaluation metadata relative to the pinned cached payload.
