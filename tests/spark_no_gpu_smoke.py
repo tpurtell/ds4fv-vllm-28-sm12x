@@ -66,6 +66,18 @@ def main() -> None:
         raise RuntimeError("CUDA must be hidden for the no-GPU smoke test")
 
     reference = load_reference()
+    mapped_names = vision._vision_weights_mapper().apply_list(
+        [
+            "layers.0.attn.q_norm.weight",
+            "model.layers.0.mlp.experts.0.gate_proj.trellis",
+            "vision.norm.weight",
+        ]
+    )
+    assert mapped_names == [
+        "language_model.layers.0.attn.q_norm.weight",
+        "language_model.model.layers.0.mlp.experts.0.gate_proj.trellis",
+        "vision.norm.weight",
+    ]
     config = SimpleNamespace(
         vocab_size=129280,
         vision_patch_size=14,

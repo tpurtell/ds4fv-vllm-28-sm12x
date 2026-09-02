@@ -66,6 +66,10 @@ registering those DeepSeek-V4-specific values with Transformers' strict layer
 type validator. The pinned base combines vLLM 0.28 with a newer Transformers
 validator split, so the compatibility helper updates the legacy combined tuple
 and the separate attention/MLP tuples.
+The Vision wrapper also handles the derivative's dual text-weight namespaces:
+ordinary tensors retain native `layers.*` names, while its quantized expert
+payloads are already stored under `model.layers.*`; both delegate exactly once
+to the wrapped DeepSeek-V4 language model.
 
 The later upstream revision `31ea11185e11ccafad1c385104188a9e3b648ad6`
 changes only README/evaluation metadata relative to the pinned cached payload.

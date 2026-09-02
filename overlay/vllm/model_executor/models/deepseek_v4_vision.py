@@ -626,6 +626,10 @@ def _vision_weights_mapper() -> WeightsMapper:
     # into ``lm_lm_head.weight`` and similarly double-maps the model subtree.
     return WeightsMapper(
         orig_to_new_prefix={
+            # EXL3 expert payloads are already stored in vLLM's native
+            # ``model.layers.*`` namespace, while the remaining checkpoint
+            # weights retain the original ``layers.*`` names.
+            "model.": "language_model.model.",
             "layers.": "language_model.layers.",
             "embed.": "language_model.embed.",
             "norm.": "language_model.norm.",

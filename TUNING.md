@@ -217,6 +217,10 @@ is retained in this repository.
   per-model compatibility table rather than discarded. The compatibility
   helper is extended for the pinned base's newer split attention/MLP validator
   tuples, and the CUDA-hidden EXL3 smoke exercises the real vLLM config parser.
+  The wrapper additionally maps the quant derivative's `model.layers.*` expert
+  payloads under `language_model.model.*` while preserving its ordinary
+  `layers.*` mapping; both InstantTensor and the stock loader exposed the same
+  missing namespace before this correction.
 - **Passed:** Source-check and minimally exercise the frozen-image benchmark
   clients without running a premature full suite; the development-only smoke
   is retained in `validation/2026-09-02-release-harness-smoke.md`.

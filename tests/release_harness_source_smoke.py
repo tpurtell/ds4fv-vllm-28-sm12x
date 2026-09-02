@@ -174,6 +174,7 @@ def main() -> None:
     assert "def _encode_image_batch(" in vision
     assert "patch_batch = torch.stack(" in vision
     assert "q.transpose(-3, -2)" in vision
+    assert '"model.": "language_model.model."' in vision
 
     vision_patch = (ROOT / "patches/apply-vllm-vision.py").read_text()
     assert '"deepseek_v4": ("hash_moe", "moe")' in vision_patch
