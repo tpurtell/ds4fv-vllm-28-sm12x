@@ -204,12 +204,13 @@ def main() -> None:
     assert calls[0]["extra_page_block_size"] == 64
 
     # vLLM carries one shared-KV-head dimension in its sparse index tensors;
-    # the adapter must remove that singleton before entering B12x's 2-D API.
-    adapted: dict[str, object] = {}
+    # the adapter must remove that singleton for both dual-cache Vision and
+    # single-cache native prefill before entering B12x's 2-D API.
+    adapted: list[dict[str, object]] = []
     real_prefill = prefill_dispatch.run_unified_prefill
 
     def fake_prefill(**kwargs):
-        adapted.update(kwargs)
+        adapted.append(kwargs)
 
     prefill_dispatch.run_unified_prefill = fake_prefill
     try:
@@ -218,7 +219,7 @@ def main() -> None:
             attn_sink=torch.empty((32,), dtype=torch.float32),
             _get_workspace=lambda _device: torch.empty((4096,), dtype=torch.uint8),
         )
-        DeepseekV4FlashInferSM120Attention._b12x_wide_dual_prefill(
+        DeepseekV4FlashInferSM120Attention._b12x_prefill(
             fake_attention,
             q=torch.empty((2, 32, 512), dtype=torch.bfloat16),
             swa_kv_cache=torch.empty((4, 64, 1, 584), dtype=torch.uint8),
@@ -229,25 +230,40 @@ def main() -> None:
             extra_lengths=torch.full((2,), 512, dtype=torch.int32),
             output=torch.empty((2, 32, 512), dtype=torch.bfloat16),
         )
+        DeepseekV4FlashInferSM120Attention._b12x_prefill(
+            fake_attention,
+            q=torch.empty((2, 32, 512), dtype=torch.bfloat16),
+            swa_kv_cache=torch.empty((4, 64, 1, 584), dtype=torch.uint8),
+            swa_indices=torch.zeros((2, 1, 128), dtype=torch.int32),
+            swa_lengths=torch.full((2,), 128, dtype=torch.int32),
+            extra_kv_cache=None,
+            extra_indices=None,
+            extra_lengths=None,
+            output=torch.empty((2, 32, 512), dtype=torch.bfloat16),
+        )
     finally:
         prefill_dispatch.run_unified_prefill = real_prefill
-    assert adapted["topk_indices"].shape == (2, 512)
-    assert adapted["extra_indices"].shape == (2, 512)
+    assert adapted[0]["topk_indices"].shape == (2, 512)
+    assert adapted[0]["extra_indices"].shape == (2, 512)
+    assert adapted[1]["topk_indices"].shape == (2, 128)
+    assert adapted[1]["extra_kv_cache"] is None
+    assert adapted[1]["extra_indices"] is None
+    assert adapted[1]["extra_page_block_size"] is None
 
-    wide_prefill_source = inspect.getsource(
-        DeepseekV4FlashInferSM120Attention._b12x_wide_dual_prefill
+    b12x_prefill_source = inspect.getsource(
+        DeepseekV4FlashInferSM120Attention._b12x_prefill
     )
     forward_prefill_source = inspect.getsource(
         DeepseekV4FlashInferSM120Attention._forward_prefill
     )
-    assert "run_unified_prefill" in wide_prefill_source
-    assert "extra_page_block_size" in wide_prefill_source
-    assert "int(swa_indices_chunk.shape[-1]) == 512" in forward_prefill_source
-    assert "use_b12x_wide_dual" in forward_prefill_source
+    assert "run_unified_prefill" in b12x_prefill_source
+    assert "extra_page_block_size" in b12x_prefill_source
+    assert "int(swa_indices_chunk.shape[-1]) in (128, 512)" in forward_prefill_source
+    assert "use_b12x_prefill" in forward_prefill_source
 
     print(
         "Spark no-GPU B12x MoE, native O-projection, compressed decode, and "
-        "wide dual-prefill smoke test passed"
+        "native prefill smoke test passed"
     )
 
 

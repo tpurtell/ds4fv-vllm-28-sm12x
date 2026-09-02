@@ -65,8 +65,6 @@ COPY patches/apply-vllm-dspark-adaptive-sm121.py \
      /tmp/apply-vllm-dspark-adaptive-sm121.py
 COPY patches/apply-vllm-long-prefill-jit.py \
      /tmp/apply-vllm-long-prefill-jit.py
-COPY patches/apply-vllm-sparse-indexer-sm121.py \
-     /tmp/apply-vllm-sparse-indexer-sm121.py
 COPY patches/apply-flashinfer-dspark-sm121.py \
      /tmp/apply-flashinfer-dspark-sm121.py
 COPY --from=exl3_source \
@@ -86,8 +84,6 @@ RUN echo "209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c  ${VL
       "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 /tmp/apply-vllm-long-prefill-jit.py \
       "${VLLM_SITE_PACKAGES}/vllm" \
- && python3 /tmp/apply-vllm-sparse-indexer-sm121.py \
-      "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 -m compileall -q "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 -m py_compile \
       "${VLLM_SITE_PACKAGES}/flashinfer/mla/_sparse_mla_sm120.py" \
@@ -95,7 +91,6 @@ RUN echo "209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c  ${VL
  && rm /tmp/apply-vllm-b12x.py /tmp/apply-vllm-vision.py \
        /tmp/apply-vllm-exl3.py /tmp/apply-vllm-dspark-adaptive-sm121.py \
        /tmp/apply-vllm-long-prefill-jit.py \
-       /tmp/apply-vllm-sparse-indexer-sm121.py \
        /tmp/apply-flashinfer-dspark-sm121.py
 
 COPY scripts/start-native.sh /opt/ds4fv/bin/start-native

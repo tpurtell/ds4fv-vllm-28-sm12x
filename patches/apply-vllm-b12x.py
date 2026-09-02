@@ -517,23 +517,22 @@ def patch_b12x_o_projection(root: Path) -> None:
         "        self,\n"
         "        q: torch.Tensor,\n"
         "        compressed_k_cache: torch.Tensor | None,\n",
-        "    def _b12x_wide_dual_prefill(\n"
+        "    def _b12x_prefill(\n"
         "        self,\n"
         "        *,\n"
         "        q: torch.Tensor,\n"
         "        swa_kv_cache: torch.Tensor,\n"
         "        swa_indices: torch.Tensor,\n"
         "        swa_lengths: torch.Tensor,\n"
-        "        extra_kv_cache: torch.Tensor,\n"
-        "        extra_indices: torch.Tensor,\n"
+        "        extra_kv_cache: torch.Tensor | None,\n"
+        "        extra_indices: torch.Tensor | None,\n"
         "        extra_lengths: torch.Tensor | None,\n"
         "        output: torch.Tensor,\n"
         "    ) -> None:\n"
-        "        # FlashInfer's SM12x dual-cache prefill dispatcher fixes the\n"
-        "        # primary SWA width at 128. Vision stores a 512-wide physical\n"
-        "        # SWA index row so image-prefix tokens can remain visible. B12x's\n"
-        "        # qualified MG kernel accepts that wider primary section while\n"
-        "        # preserving one softmax across SWA + compressed candidates.\n"
+        "        # Use B12x's nonpersistent SM121 MG kernel for every native\n"
+        "        # DSV4 prefill shape. FlashInfer's sparse paged-attention kernel\n"
+        "        # can hang on only one TP rank after sustained decode, leaving\n"
+        "        # its peer blocked in the following output-projection all-reduce.\n"
         "        from b12x.attention._shared.mla.prefill import run_unified_prefill\n"
         "\n"
         "        lse_numel = int(q.shape[0]) * int(q.shape[1])\n"
@@ -552,16 +551,24 @@ def patch_b12x_o_projection(root: Path) -> None:
         "            output=output,\n"
         "            lse_out=lse_out,\n"
         "            extra_kv_cache=extra_kv_cache,\n"
-        "            extra_indices=extra_indices.reshape(int(q.shape[0]), -1),\n"
+        "            extra_indices=(\n"
+        "                extra_indices.reshape(int(q.shape[0]), -1)\n"
+        "                if extra_indices is not None\n"
+        "                else None\n"
+        "            ),\n"
         "            extra_topk_length=extra_lengths,\n"
-        "            extra_page_block_size=int(extra_kv_cache.shape[1]),\n"
+        "            extra_page_block_size=(\n"
+        "                int(extra_kv_cache.shape[1])\n"
+        "                if extra_kv_cache is not None\n"
+        "                else None\n"
+        "            ),\n"
         "        )\n"
         "\n"
         "    def _forward_prefill(\n"
         "        self,\n"
         "        q: torch.Tensor,\n"
         "        compressed_k_cache: torch.Tensor | None,\n",
-        "B12x wide dual-cache prefill helper",
+        "B12x native prefill helper",
     )
     replace_once(
         path,
@@ -588,14 +595,12 @@ def patch_b12x_o_projection(root: Path) -> None:
         '                    "Compressed sparse MLA prefill requires compressed sparse indices."\n'
         "                )\n"
         "            output_chunk = output[query_start:query_end]\n"
-        "            use_b12x_wide_dual = (\n"
+        "            use_b12x_prefill = (\n"
         "                self._b12x_o_proj_enabled\n"
-        "                and extra_kv_paged is not None\n"
-        "                and extra_sparse_indices_chunk is not None\n"
-        "                and int(swa_indices_chunk.shape[-1]) == 512\n"
+        "                and int(swa_indices_chunk.shape[-1]) in (128, 512)\n"
         "            )\n"
-        "            if use_b12x_wide_dual:\n"
-        "                self._b12x_wide_dual_prefill(\n"
+        "            if use_b12x_prefill:\n"
+        "                self._b12x_prefill(\n"
         "                    q=q_chunk,\n"
         "                    swa_kv_cache=swa_kv_paged,\n"
         "                    swa_indices=swa_indices_chunk,\n"
@@ -620,7 +625,7 @@ def patch_b12x_o_projection(root: Path) -> None:
         "                    extra_sparse_indices=extra_sparse_indices_chunk,\n"
         "                    extra_sparse_topk_lens=extra_sparse_lengths_chunk,\n"
         "                )\n",
-        "B12x Vision wide dual-cache prefill selection",
+        "B12x native prefill selection",
     )
 
     loader_path = root / "model_executor/model_loader/utils.py"

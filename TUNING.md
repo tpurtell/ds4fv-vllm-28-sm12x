@@ -42,10 +42,15 @@ is retained in this repository.
   while an image query can see its complete image block in both directions.
   The physical SWA cache span is widened for the maximum 384-token block; the
   compressed DeepSeek indexer remains causal, matching the checkpoint code.
-  FlashInfer owns its supported text/decode shapes; Vision's 512+512 dual-cache
-  prefill is routed narrowly through B12x's BF16-QK multi-group kernel. The
-  exact TP2 envelope reached 0.99984747 cosine against B12x's independent
-  PyTorch oracle and passed full-model startup plus live image requests.
+  FlashInfer remains the default decode backend, while native DSV4 prefill at
+  128/512-wide SWA routes through B12x's nonpersistent multi-group kernel.
+  This also covers Vision's 512+512 dual-cache envelope, which reached
+  0.99984747 cosine against B12x's independent PyTorch oracle.
+
+- **Rank-safe native prefill:** Repeated long decode exposed a rank-asymmetric
+  hang inside FlashInfer's SM121 sparse prefill kernel; TP1 remained in paged
+  attention after TP0 reached the following all-reduce. The existing B12x
+  prefill adapter now handles every native single/dual-cache 128/512 shape.
 
 - **Native output projection:** DeepSeek-V4's two-stage output projection is
   packed and executed through B12x, with an explicit TP all-reduce and a
@@ -74,10 +79,6 @@ is retained in this repository.
   warmup now includes the ordinary non-zero query-slice integer class used
   only after a prefill exceeds the indexer logits budget. This prevents the
   128K path from compiling `BuildPrefillChunkMetadataKernel` after readiness.
-
-- **SM121 sparse-indexer safety:** Repeated DSv4 decode launches can deadlock
-  vLLM 0.28's persistent radix TopK path on GB10, so SM121 uses the ordinary
-  per-row TopK decoder while other CUDA capability families remain unchanged.
 
 - **Two-rail networking:** Each Spark exposes two active RoCEv2 rails, with GID
   index 3 on `rocep1s0f0/1` and `roceP2p1s0f0/1`. On the same five warmed text
