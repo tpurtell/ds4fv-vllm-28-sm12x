@@ -9,7 +9,9 @@ decode excludes time to first token and sums per-sequence rates at C2/C4.
 
 The published arm64 image is
 `sha256:dcafc6bf649d70a014ff4350eba85cd7e721dec0ecb9a24ea38bd58401ffe8bd`,
-built from recipe commit `93df1414cd5aa558d7064706e8d37c93651c59c6`.
+built from recipe commit `93df1414cd5aa558d7064706e8d37c93651c59c6`. Its
+GHCR manifest digest is
+`sha256:6401b9d020361fa97ad1ac192203fdc5ae38daba3e5625fd48d568e5f9288be8`.
 
 The complete native suite was measured on its immediate predecessor
 (`63b7e93`, image `sha256:7758b0...`); the only subsequent source changes were

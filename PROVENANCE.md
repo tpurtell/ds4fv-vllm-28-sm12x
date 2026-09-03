@@ -8,10 +8,13 @@ used as build inputs.
 
 - OCI image ID:
   `sha256:dcafc6bf649d70a014ff4350eba85cd7e721dec0ecb9a24ea38bd58401ffe8bd`
+- GHCR manifest digest:
+  `sha256:6401b9d020361fa97ad1ac192203fdc5ae38daba3e5625fd48d568e5f9288be8`
 - Recipe source embedded in the image:
   `93df1414cd5aa558d7064706e8d37c93651c59c6`
 - Platform: `linux/arm64`; CUDA target: `sm_121a`
-- Registry aliases: `ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.0` and
+- Registry aliases: `ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.0`,
+  `ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:sha-93df141`, and
   `ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:latest`
 
 The same full image ID was verified on `emu`, `kiwi`, `ostrich`, and `dodo`.

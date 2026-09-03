@@ -4,6 +4,7 @@
   "role": "native-vision",
   "model": "deepseek-v4-flash-vision-exp-native",
   "image_id": "sha256:dcafc6bf649d70a014ff4350eba85cd7e721dec0ecb9a24ea38bd58401ffe8bd",
+  "registry_manifest_digest": "sha256:6401b9d020361fa97ad1ac192203fdc5ae38daba3e5625fd48d568e5f9288be8",
   "recipe_commit": "93df1414cd5aa558d7064706e8d37c93651c59c6",
   "full_suite_predecessor": {
     "directory": "../20260903T002540Z-native-vision",
