@@ -59,8 +59,8 @@ Check the fabric without starting containers:
 scripts/launch-two-spark.sh --check-only
 ```
 
-Launch the pinned native Vision checkpoint with TP2 and decode-context
-parallelism across both Sparks:
+Launch the pinned native Vision checkpoint with TP2 across both Sparks. The
+release default uses DCP1, so each rank retains a complete KV view:
 
 ```bash
 DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:native-dev \
@@ -82,21 +82,23 @@ DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:native-dev \
 scripts/launch-two-spark.sh
 ```
 
-The two-Spark profile defaults to `MAX_MODEL_LEN=500000` and `DCP_SIZE=2`;
-set `DCP_SIZE=1` only for a comparison run. The launcher replaces only its two
+The two-Spark profile defaults to `MAX_MODEL_LEN=500000` and `DCP_SIZE=1`.
+This keeps APC enabled, avoids DCP communication on the latency-sensitive
+decode path, and retains enough FP8 KV capacity for two maximum-length
+requests. Set `DCP_SIZE=2` explicitly to use the retained experimental
+rate-aware path. The launcher replaces only its two
 exact named containers
 (`ds4fv-native-head` and `ds4fv-native-worker` by default). Fabric merge and
 cross-NIC policies remain environment overrides, but the defaults are now
 qualified: merged dual rail with `NCCL_CROSS_NIC=2` was 4.84% faster than one
 HCA on the matched native text TP2 prefill run.
 
-The retained rate-aware DCP2 development image has passed capacity and the full
-strict startup ladder. Replicating bounded SWA and C128 cache families while
-sharding C4 reduced repeated C1 target-pass overhead from 10.2% to 4.7% versus
-the matched 500K/APC DCP1 control. Its 1,337,408-token pool is 29.0% larger
-than DCP1 and admits 2.67 concurrent 500K requests; final production-image
-content qualification remains pending. `ag_rs` is the default communication
-backend; set
+The retained opt-in DCP2 implementation contains the required rank-local
+length, slot-mapping, LSE merge, and hybrid-cache ownership corrections.
+Replicating bounded SWA and C128 cache families while sharding C4 reduced its
+repeated C1 target-pass overhead from 10.2% to 4.7% versus the matched
+500K/APC DCP1 control, but DCP1 remained faster and is the release default.
+`ag_rs` is the DCP2 communication default; set
 `DCP_COMM_BACKEND=a2a` only for diagnostics, since it recovered just 1.2% at
 C1 and reduced the measured KV pool. DCP-group query replication was also
 tested and rejected: its extra small-M Q projection cost more than the removed
@@ -157,7 +159,7 @@ matched gate passes.
 
 The frozen-image harness is documented in
 [benchmarks/README.md](benchmarks/README.md). It measures native Vision
-TP2+DCP2 with FP8 and the primary one-Spark Vision EXL3 model with matched FP8
+TP2+DCP1 with FP8 and the primary one-Spark Vision EXL3 model with matched FP8
 and NVFP4 runs. The suites cover code-agent decode/concurrency and context
 depth curves, unique 8K--128K prefill, the weighted semantic/structured blend,
 tool use, 128K retrieval, role-specific Vision or prefix-cache checks, and a
@@ -181,6 +183,6 @@ loads all shards, serves correctly, and reaches 2,234.87 tok/s on its retained
 default, and the [compressed MLA qualification](validation/2026-09-02-b12x-compressed-mla.md)
 records why its faster isolated B12x kernel remains opt-in. Reference-logit
 comparison and longer reliability testing remain pending. Native Vision now
-also reaches strict ready state with TP2+DCP2, APC, and a 500K model length;
+also reaches strict ready state with TP2+DCP1, APC, and a 500K model length;
 the committed-image release suite remains before publication. The mixed K2/K3
 microbenchmark and matched one-Spark full-model gates have passed.

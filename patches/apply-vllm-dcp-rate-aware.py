@@ -2,8 +2,11 @@
 """Replicate cheap DeepSeek-V4 cache families while DCP-sharding C4.
 
 DeepSeek-V4's fixed SWA cache and 128:1 compressed cache are inexpensive to
-replicate. Keeping those families local removes the DCP query/output exchange
-from C1 and C128 layers; the dominant C4 cache and its indexer remain sharded.
+replicate. Compressor state must also be replicated: one C4/C128 record reads
+several consecutive uncompressed states, so striped DCP ownership cannot form
+the record locally. Keeping those families local removes the DCP query/output
+exchange from C1 and C128 layers; the dominant C4 cache and its indexer remain
+sharded.
 """
 
 from __future__ import annotations
@@ -510,6 +513,22 @@ def patch_dflash(root: Path) -> None:
 
 
 def patch_metadata(root: Path) -> None:
+    path = root / "models/deepseek_v4/compressor.py"
+    replace_once(
+        path,
+        '''            alignment=576 if uses_fp8_ds_mla_layout else 512,
+        )
+''',
+        '''            alignment=576 if uses_fp8_ds_mla_layout else 512,
+            # A compressed record consumes a consecutive C4/C128 state
+            # window. Replicate this tiny scratch cache so every rank sees the
+            # complete window, then shard only the completed compressed KV.
+            model_version="deepseek_v4",
+        )
+''',
+        "replicated compressor state cache",
+    )
+
     path = root / "models/deepseek_v4/sparse_mla.py"
     replace_once(
         path,

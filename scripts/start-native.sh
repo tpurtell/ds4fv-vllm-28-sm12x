@@ -251,7 +251,7 @@ serve_model() {
     --port "${API_PORT:-8000}" \
     --distributed-executor-backend ray \
     --tensor-parallel-size "${TP_SIZE:-2}" \
-    --decode-context-parallel-size "${DCP_SIZE:-2}" \
+    --decode-context-parallel-size "${DCP_SIZE:-1}" \
     --dcp-comm-backend "${dcp_comm_backend}" \
     "${moe_args[@]}" \
     --moe-backend b12x \

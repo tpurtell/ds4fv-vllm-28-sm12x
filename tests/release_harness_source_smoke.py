@@ -100,6 +100,8 @@ def main() -> None:
         "--limit-mm-per-prompt '{\"image\":16}'",
     ):
         assert fragment in launcher
+
+    dockerfile = (ROOT / "Dockerfile").read_text()
     for fragment in (
         "run_vllm_with_warmup \"native-${model_kind}\"",
         'run_vllm_with_warmup "${warmup_role}"',
@@ -173,11 +175,14 @@ def main() -> None:
     assert "apply-vllm-dsv4-nvfp4.py" in dockerfile
     assert "apply-vllm-dcp-dsv4.py" in dockerfile
     assert "apply-vllm-dcp-rate-aware.py" in dockerfile
+    assert "apply-vllm-dsv4-tokenizer-threadsafe.py" in dockerfile
     assert "3fc8d1491d1313c0ca64b2b95772972b7f42ee9d" in dockerfile
     assert "tests/spark_b12x_no_gpu_smoke.py" in dockerfile
     assert "tests/spark_dcp_swa_no_gpu_smoke.py" in dockerfile
     assert "tests/spark_dcp_dsv4_no_gpu_smoke.py" in dockerfile
     assert "tests/spark_dcp_rate_aware_no_gpu_smoke.py" in dockerfile
+    assert "tests/spark_dsv4_tokenizer_threadsafe_no_gpu.py" in dockerfile
+    assert "tests/spark_vision_layout_hash_no_gpu_smoke.py" in dockerfile
     assert "CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_dcp_swa_no_gpu_smoke.py" in dockerfile
 
     release_suite = (ROOT / "scripts/run-release-suite.sh").read_text()
@@ -231,10 +236,21 @@ def main() -> None:
         "split the original mixed full-MLA family",
         "self.block_tables.kv_cache_cp_sizes[gid]",
         "if self.block_tables.kv_cache_cp_sizes[gid] > 1",
+        'model_version="deepseek_v4"',
         "def _swa_lengths_for_shard(",
         "swa_lens = _swa_lengths_for_shard(self, swa_lens)",
     ):
         assert fragment in dcp_rate_aware_patch
+
+    tokenizer_patch = (
+        ROOT / "patches/apply-vllm-dsv4-tokenizer-threadsafe.py"
+    ).read_text()
+    for fragment in (
+        "from vllm.tokenizers.hf import maybe_make_thread_pool",
+        "tokenizer = copy.copy(tokenizer)",
+        "config.model_config.renderer_num_workers + 1",
+    ):
+        assert fragment in tokenizer_patch
 
     nvfp4_patch = (ROOT / "patches/apply-vllm-dsv4-nvfp4.py").read_text()
     nvfp4_producer = (
@@ -313,6 +329,21 @@ def main() -> None:
 
     b12x_patch = (ROOT / "patches/apply-vllm-b12x.py").read_text()
     assert "patch_b12x_wide_dual_prefill" not in b12x_patch
+    b12x_stream_patch = (
+        ROOT / "patches/apply-vllm-b12x-shared-stream.py"
+    ).read_text()
+    assert "disable_aux_stream_overlap=self._uses_b12x_moe_kernel" in (
+        b12x_stream_patch
+    )
+    assert "or disable_aux_stream_overlap" in b12x_stream_patch
+    assert "apply-vllm-b12x-shared-stream.py" in dockerfile
+    b12x_configured_stream_patch = (
+        ROOT / "patches/apply-vllm-b12x-configured-stream.py"
+    ).read_text()
+    assert 'getattr(kernel_config, "moe_backend", None) == "b12x"' in (
+        b12x_configured_stream_patch
+    )
+    assert "apply-vllm-b12x-configured-stream.py" in dockerfile
 
     vision = (
         ROOT / "overlay/vllm/model_executor/models/deepseek_v4_vision.py"
@@ -348,7 +379,7 @@ def main() -> None:
     assert "max_num_batched_tokens_default=2048" in launcher
     assert 'role=${DS4FV_ROLE:-exl3}' in launcher
     assert 'local model_kind=${MODEL_KIND:-vision}' in launcher
-    assert '--decode-context-parallel-size "${DCP_SIZE:-2}"' in launcher
+    assert '--decode-context-parallel-size "${DCP_SIZE:-1}"' in launcher
     assert '--dcp-comm-backend "${dcp_comm_backend}"' in launcher
     assert 'DCP_COMM_BACKEND:-ag_rs' in launcher
     assert '--max-model-len "${MAX_MODEL_LEN:-500000}"' in launcher
@@ -357,8 +388,16 @@ def main() -> None:
 
     two_spark_launcher = (ROOT / "scripts/launch-two-spark.sh").read_text()
     assert '-e MODEL_KIND="${MODEL_KIND:-vision}"' in two_spark_launcher
-    assert '-e DCP_SIZE="${DCP_SIZE:-2}"' in two_spark_launcher
+    assert '-e DCP_SIZE="${DCP_SIZE:-1}"' in two_spark_launcher
     assert '-e MAX_MODEL_LEN="${MAX_MODEL_LEN:-500000}"' in two_spark_launcher
+    assert (
+        '-e VLLM_DISABLE_SHARED_EXPERTS_STREAM="${VLLM_DISABLE_SHARED_EXPERTS_STREAM:-0}"'
+        in two_spark_launcher
+    )
+    assert (
+        '-e VLLM_MULTI_STREAM_GEMM_TOKEN_THRESHOLD="${VLLM_MULTI_STREAM_GEMM_TOKEN_THRESHOLD:-1024}"'
+        in two_spark_launcher
+    )
     assert 'model_kind=${MODEL_KIND:-vision}' in one_spark_launcher
     assert "max_model_len=500000" in one_spark_launcher
 

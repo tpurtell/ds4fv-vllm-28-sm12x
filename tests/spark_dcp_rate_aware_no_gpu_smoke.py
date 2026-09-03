@@ -50,11 +50,20 @@ swa = SlidingWindowMLASpec(
     model_version="deepseek_v4",
     sliding_window=512,
 )
+compressor_state = SlidingWindowMLASpec(
+    block_size=4,
+    num_kv_heads=1,
+    head_size=2048,
+    dtype=torch.float32,
+    model_version="deepseek_v4",
+    sliding_window=8,
+)
 
 assert get_kv_cache_dcp_world_size(c4, 2) == 2
 assert get_kv_cache_dcp_world_size(c4_indexer, 2) == 2
 assert get_kv_cache_dcp_world_size(c128, 2) == 1
 assert get_kv_cache_dcp_world_size(swa, 2) == 1
+assert get_kv_cache_dcp_world_size(compressor_state, 2) == 1
 assert get_kv_cache_dcp_world_size(c128, 1) == 1
 
 sharded = UniformTypeKVCacheSpecs.from_specs({"c4": c4, "indexer": c4_indexer})
@@ -137,6 +146,19 @@ for position in range(16):
     values = [slot(position, 9, 8, 2, rank) for rank in range(2)]
     assert sum(value is not None for value in values) == 1
 
+# C4 record n is emitted at original-token position 4*n+3 but owned by
+# compressed-record parity n%2. With striped state ownership, half the
+# boundaries have no rank that owns both the boundary state and destination;
+# even the other half cannot read the complete eight-state compressor window.
+boundary_owner_mismatches = 0
+for record in range(16):
+    boundary = 4 * record + 3
+    compressed_owner = record % 2
+    state_owner = boundary % 2
+    boundary_owner_mismatches += compressed_owner != state_owner
+    assert slot(boundary, 3, 4, 1, compressed_owner) is not None
+assert boundary_owner_mismatches == 8
+
 root = Path(vllm.__file__).resolve().parent
 block_table = (root / "v1/worker/gpu/block_table.py").read_text()
 model_runner = (root / "v1/worker/gpu/model_runner.py").read_text()
@@ -145,6 +167,7 @@ coordinator = (root / "v1/core/kv_cache_coordinator.py").read_text()
 dflash = (root / "v1/worker/gpu/spec_decode/dflash/speculator.py").read_text()
 sparse_mla = (root / "models/deepseek_v4/sparse_mla.py").read_text()
 sparse_swa = (root / "v1/attention/backends/mla/sparse_swa.py").read_text()
+compressor = (root / "models/deepseek_v4/compressor.py").read_text()
 sm120 = (root / "models/deepseek_v4/nvidia/flashinfer_sparse.py").read_text()
 
 for fragment in (
@@ -173,6 +196,7 @@ for fragment in (
     assert fragment in dflash, fragment
 assert "configured_dcp if self.compress_ratio == 4 else 1" in sparse_mla
 assert "self.dcp_world_size = 1" in sparse_swa
+assert 'model_version="deepseek_v4"' in compressor
 for fragment in (
     "self.dcp_world_size > 1 and self.compress_ratio == 4",
     "def _swa_lengths_for_shard(",

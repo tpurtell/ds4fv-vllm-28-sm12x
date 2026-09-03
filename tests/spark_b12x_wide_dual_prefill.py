@@ -73,56 +73,65 @@ def main() -> None:
     )
     main_cache = repack_compressed(case["kv_cache"], page_size)
     extra_cache = repack_compressed(case["extra_kv_cache"], page_size)
-    main_lengths = torch.tensor([384, 128], dtype=torch.int32, device="cuda")
     extra_lengths = torch.tensor([512, 257], dtype=torch.int32, device="cuda")
+    length_cases = {
+        "mixed": torch.tensor([384, 128], dtype=torch.int32, device="cuda"),
+        # Rate-aware DCP owns replicated SWA on rank 0.  A C4 prefill on every
+        # other rank is therefore an all-extra union: the main/SWA section is
+        # empty while compressed C4 records remain live.  Qualify that exact
+        # boundary instead of relying on the ordinary mixed-length case.
+        "all-extra": torch.zeros(num_tokens, dtype=torch.int32, device="cuda"),
+    }
 
-    expected, expected_lse = dsv4_extra_ref.dsv4_extra_decode_reference(
-        case["q"],
-        case["kv_cache"],
-        case["topk_indices"],
-        case["sm_scale"],
-        case["extra_kv_cache"],
-        case["extra_indices"],
-        page_block_size=page_size,
-        pbs_extra=page_size,
-        topk_length=main_lengths,
-        extra_topk_length=extra_lengths,
-        main_kv_dequant=case["kv_dequant"],
-        extra_kv_dequant=case["extra_kv_dequant"],
-    )
+    for label, main_lengths in length_cases.items():
+        expected, expected_lse = dsv4_extra_ref.dsv4_extra_decode_reference(
+            case["q"],
+            case["kv_cache"],
+            case["topk_indices"],
+            case["sm_scale"],
+            case["extra_kv_cache"],
+            case["extra_indices"],
+            page_block_size=page_size,
+            pbs_extra=page_size,
+            topk_length=main_lengths,
+            extra_topk_length=extra_lengths,
+            main_kv_dequant=case["kv_dequant"],
+            extra_kv_dequant=case["extra_kv_dequant"],
+        )
 
-    output, lse = run_unified_prefill(
-        q=case["q"].contiguous(),
-        kv_cache=main_cache,
-        topk_indices=case["topk_indices"].contiguous(),
-        topk_length=main_lengths,
-        sm_scale=case["sm_scale"],
-        page_block_size=page_size,
-        extra_kv_cache=extra_cache,
-        extra_indices=case["extra_indices"].contiguous(),
-        extra_topk_length=extra_lengths,
-        extra_page_block_size=page_size,
-    )
-    torch.cuda.synchronize()
+        output, lse = run_unified_prefill(
+            q=case["q"].contiguous(),
+            kv_cache=main_cache,
+            topk_indices=case["topk_indices"].contiguous(),
+            topk_length=main_lengths,
+            sm_scale=case["sm_scale"],
+            page_block_size=page_size,
+            extra_kv_cache=extra_cache,
+            extra_indices=case["extra_indices"].contiguous(),
+            extra_topk_length=extra_lengths,
+            extra_page_block_size=page_size,
+        )
+        torch.cuda.synchronize()
 
-    actual = output.float()
-    expected = expected.float()
-    actual_lse = lse.float()
-    expected_lse = expected_lse.float()
-    cos = cosine(actual, expected)
-    max_abs = float((actual - expected).abs().max())
-    max_lse = float((actual_lse - expected_lse).abs().max())
-    print(
-        "wide dual-cache prefill qualification: "
-        f"capability={capability} heads={num_heads} main={topk} extra={extra_topk} "
-        f"cos={cos:.8f} max_abs={max_abs:.8f} max_lse={max_lse:.8f}"
-    )
-    if not math.isfinite(cos) or cos <= 0.999:
-        raise AssertionError(f"output cosine {cos} <= 0.999")
-    if max_abs >= 2e-2:
-        raise AssertionError(f"output max abs {max_abs} >= 2e-2")
-    if max_lse >= 5e-2:
-        raise AssertionError(f"LSE max abs {max_lse} >= 5e-2")
+        actual = output.float()
+        expected = expected.float()
+        actual_lse = lse.float()
+        expected_lse = expected_lse.float()
+        cos = cosine(actual, expected)
+        max_abs = float((actual - expected).abs().max())
+        max_lse = float((actual_lse - expected_lse).abs().max())
+        print(
+            "wide dual-cache prefill qualification: "
+            f"case={label} capability={capability} heads={num_heads} "
+            f"main={topk} extra={extra_topk} cos={cos:.8f} "
+            f"max_abs={max_abs:.8f} max_lse={max_lse:.8f}"
+        )
+        if not math.isfinite(cos) or cos <= 0.999:
+            raise AssertionError(f"{label} output cosine {cos} <= 0.999")
+        if max_abs >= 2e-2:
+            raise AssertionError(f"{label} output max abs {max_abs} >= 2e-2")
+        if max_lse >= 5e-2:
+            raise AssertionError(f"{label} LSE max abs {max_lse} >= 5e-2")
 
 
 if __name__ == "__main__":

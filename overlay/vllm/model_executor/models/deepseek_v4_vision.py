@@ -11,6 +11,7 @@ stack about the visual routing and attention contracts.
 
 from __future__ import annotations
 
+import hashlib
 import math
 from collections.abc import Iterable, Mapping, Sequence
 from functools import lru_cache
@@ -203,6 +204,47 @@ def build_image_block(
     return types, permutation
 
 
+def _position_aware_encoder_hash(base_hash: str, block_types: torch.Tensor) -> str:
+    """Key encoder outputs by both image contents and position-dependent layout.
+
+    DeepSeek-V4 prepends zero to three alignment pads to each image block. The
+    encoder output includes those pads and sentinel embeddings, so it is not a
+    function of the raw image hash alone. Mixing layouts under one vLLM encoder
+    cache key can return an embedding block with the wrong length.
+    """
+    types = torch.as_tensor(block_types, dtype=torch.uint8, device="cpu")
+    digest = hashlib.sha256()
+    digest.update(base_hash.encode("utf-8"))
+    digest.update(b"\0deepseek-v4-vision-layout-v1\0")
+    digest.update(bytes(types.flatten().tolist()))
+    return digest.hexdigest()
+
+
+def _with_position_aware_encoder_hashes(
+    mm_info: MultiModalProcessingInfo,
+) -> MultiModalProcessingInfo:
+    if "image" not in mm_info.hashes:
+        return mm_info
+    image_hashes = mm_info.hashes.get("image", [])
+    image_items = mm_info.kwargs.get("image", [])
+    if len(image_hashes) != len(image_items):
+        raise ValueError("inconsistent DeepSeek-V4 Vision image hashes")
+
+    hashes = {modality: list(values) for modality, values in mm_info.hashes.items()}
+    hashes["image"] = [
+        _position_aware_encoder_hash(
+            base_hash,
+            item["image_block_types"].data,
+        )
+        for base_hash, item in zip(image_hashes, image_items)
+    ]
+    return MultiModalProcessingInfo(
+        kwargs=mm_info.kwargs,
+        hashes=hashes,
+        prompt_updates=mm_info.prompt_updates,
+    )
+
+
 def _as_pil_image(value: object) -> Image.Image:
     if isinstance(value, Image.Image):
         return value.convert("RGB")
@@ -328,8 +370,16 @@ class DeepseekV4VisionMultiModalProcessor(
         self, inputs: ProcessorInputs, timing_ctx: TimingContext
     ) -> tuple[list[int], MultiModalProcessingInfo, bool]:
         # Leading alignment pads depend on the placeholder's prompt position,
-        # so per-image processor/encoder cache reuse would be incorrect.
-        return self._apply_hf_processor(inputs, timing_ctx)
+        # so per-image processor cache reuse would be incorrect. The worker's
+        # encoder cache is keyed separately; make that identity layout-aware.
+        prompt_ids, mm_info, is_update_applied = self._apply_hf_processor(
+            inputs, timing_ctx
+        )
+        return (
+            prompt_ids,
+            _with_position_aware_encoder_hashes(mm_info),
+            is_update_applied,
+        )
 
     def _call_hf_processor(
         self,

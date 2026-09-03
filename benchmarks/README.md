@@ -2,7 +2,7 @@
 
 Release measurements are run only after one committed arm64 image has been
 built on a DGX Spark and replicated byte-for-byte to every Spark used by the
-service. Both the native Vision FP8 TP2+DCP2 suite and the one-Spark mixed
+service. Both the native Vision FP8 TP2+DCP1 suite and the one-Spark mixed
 Vision EXL3 FP8/NVFP4 suites
 must name the same full Docker image ID and 40-character recipe commit in every
 receipt; a mutable tag is not release identity.
@@ -14,7 +14,7 @@ or GPU code.
 
 | Role | Topology | KV cache | DSpark | Prefix cache | Vision limit |
 | --- | --- | --- | --- | --- | --- |
-| `native-vision` | two SM121 Sparks, TP2+DCP2, merged dual rail | FP8 | fixed greedy K3 | on | 16 images |
+| `native-vision` | two SM121 Sparks, TP2+DCP1, merged dual rail | FP8 | fixed greedy K3 | on | 16 images |
 | `exl3-vision` | one SM121 Spark, mixed K2/K3 | FP8 | fixed greedy K3 | on | 16 images |
 | `exl3-vision` matched variant | one SM121 Spark, mixed K2/K3 | NVFP4 DS-MLA | fixed greedy K3 | on | 16 images |
 

@@ -107,6 +107,34 @@ def main() -> None:
             assert len(our_types) <= config.vision_max_n_token
             assert len(our_types) + 127 <= 512
 
+    # Encoder outputs contain the position-dependent alignment pads and must
+    # not alias in vLLM's raw-image-keyed cache. Equivalent modulo-four layouts
+    # should retain their cache hit.
+    hash_types_0, _ = vision.build_image_block(11, 11, 0)
+    hash_types_1, _ = vision.build_image_block(11, 11, 1)
+    hash_types_4, _ = vision.build_image_block(11, 11, 4)
+    hash_0 = vision._position_aware_encoder_hash("same-image", hash_types_0)
+    hash_1 = vision._position_aware_encoder_hash("same-image", hash_types_1)
+    hash_4 = vision._position_aware_encoder_hash("same-image", hash_types_4)
+    assert hash_0 != hash_1
+    assert hash_0 == hash_4
+    assert hash_0 != vision._position_aware_encoder_hash("other-image", hash_types_0)
+    mm_info = vision.MultiModalProcessingInfo(
+        kwargs={
+            "image": [
+                {
+                    "image_block_types": SimpleNamespace(data=hash_types_0),
+                }
+            ]
+        },
+        hashes={"image": ["same-image"]},
+        prompt_updates={"image": [[]]},
+    )
+    keyed_info = vision._with_position_aware_encoder_hashes(mm_info)
+    assert keyed_info.hashes == {"image": [hash_0]}
+    assert keyed_info.kwargs is mm_info.kwargs
+    assert keyed_info.prompt_updates is mm_info.prompt_updates
+
     source_image = make_image(320, 240)
     encoded = io.BytesIO()
     source_image.save(encoded, format="PNG")

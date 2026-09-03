@@ -41,6 +41,13 @@ is retained in this repository.
   as that release sentinel while rejecting every nonzero ownership mismatch.
   Full-model TP2 and EP2 both start and serve correctly on the two Sparks.
 
+- **B12x shared-expert stream safety:** B12x resident-grid MoE plans can use
+  device-wide barriers, so the runner now keeps the dense shared expert on the
+  caller stream when B12x is configured, without depending on its lazily
+  initialized kernel object. The minimal path passed strict startup, 80/80
+  concurrent Vision clients, 20/20 APC replay/collision cycles, and a complete
+  warm restart with the diagnostic global override disabled.
+
 - **Native Vision architecture:** The checkpoint's text-only architecture
   declaration cannot represent its vision tower, five image token types,
   visual MoE bias, or bidirectional image spans. The image adds an explicit
@@ -124,16 +131,23 @@ is retained in this repository.
   from 1,272.5 to 1,321.4
   tok/s (+3.84%); 32K reached 1,345.1 tok/s.
 
-- **DCP-aware Vision cache and attention:** Native Vision TP2+DCP2 shards the
+- **DCP-aware Vision cache and attention:** Opt-in native Vision TP2+DCP2 shards the
   substantial C4 main/indexer caches while replicating bounded SWA and C128
   records, keeps APC enabled, and merges C4 rank-local B12x attention with exact
   LSE weighting and one global sink. Target, profiling, CUDA-graph, and DSpark
   metadata builders use each cache group's effective ownership width; the
   replicated draft path maps physical rank 1 to logical rank 0. The retained
-  500K FP8 profile exposes a 1,337,408-token pool (2.67 concurrent maximum-length
-  requests), 29.0% more capacity than the matched DCP1 control.
+  WIP19 allocator measured a 1,337,408-token pool (2.67 concurrent
+  maximum-length requests), 29.0% more capacity than the matched DCP1 control;
+  that development result is not a production-default capacity claim.
 
-- **DCP communication:** `ag_rs` remains the native two-Spark default: packed
+- **Conservative native release default:** The two-Spark native profile now
+  defaults to TP2+DCP1 at 500K with APC enabled. Its matched control was faster
+  than the optimized DCP2 path and already admitted two maximum-length
+  requests; DCP2 remains an explicit option with its correctness patches but
+  is no longer a release-blocking performance target.
+
+- **DCP communication:** `ag_rs` remains the opt-in DCP2 communication default: packed
   A2A improved matched C1 only 1.2% and reduced the KV pool by 4.1%, while
   DCP-group query replication lost another 3.4% at C1 and reduced the pool by
   7.2%. Both alternatives were rejected in favor of optimizing the original
@@ -314,5 +328,5 @@ is retained in this repository.
   `validation/2026-09-02-native-vision-k3-reliability.md`.
 - Freeze one committed production-candidate digest with zero post-ready JIT,
   then run the separate
-  native Vision FP8 TP2+DCP2 plus matched one-Spark Vision EXL3 FP8/NVFP4 release
+  native Vision FP8 TP2+DCP1 plus matched one-Spark Vision EXL3 FP8/NVFP4 release
   suites against that exact image.

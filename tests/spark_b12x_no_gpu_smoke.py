@@ -20,6 +20,8 @@ from b12x.moe import ep_moe, fused_moe
 from vllm.config.kernel import KernelConfig
 from vllm.model_executor.layers.fused_moe.b12x_ep_moe import B12xEPExperts
 from vllm.model_executor.layers.fused_moe.b12x_moe import B12xExperts
+from vllm.model_executor.layers.fused_moe.runner.moe_runner import MoERunner
+from vllm.model_executor.layers.fused_moe.runner.shared_experts import SharedExperts
 from vllm.model_executor.layers.fused_moe.oracle.mxfp4 import (
     Mxfp4MoeBackend,
     backend_to_kernel_cls,
@@ -111,6 +113,19 @@ def main() -> None:
     assert 'VLLM_B12X_MOE_FORCE_MODELOPT_PREP")' in module_source
     assert "envs.VLLM_B12X_MOE_FORCE_MODELOPT_PREP" not in module_source
     assert "sparkinfer." not in module_source
+
+    runner_init_source = inspect.getsource(MoERunner.__init__)
+    runner_detection_source = inspect.getsource(
+        MoERunner._uses_b12x_moe_kernel.fget
+    )
+    shared_init_source = inspect.getsource(SharedExperts.__init__)
+    assert "disable_aux_stream_overlap=self._uses_b12x_moe_kernel" in (
+        runner_init_source
+    )
+    assert "or disable_aux_stream_overlap" in shared_init_source
+    assert 'getattr(kernel_config, "moe_backend", None) == "b12x"' in (
+        runner_detection_source
+    )
 
     ep_workspace_source = inspect.getsource(B12xEPExperts.workspace_shapes)
     assert "source_local_num_experts not in (0, prepared.num_experts)" in (
