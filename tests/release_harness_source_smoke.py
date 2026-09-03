@@ -192,6 +192,7 @@ def main() -> None:
     assert "apply-vllm-post-028-dcp.py" in dockerfile
     assert "INSTANTTENSOR_BACKEND=BUFFERED" in dockerfile
     assert "INSTANTTENSOR_IO_DEPTH=128" in dockerfile
+    assert 'io.tpurtell.vllm.backports="52805,52836,53046,' in dockerfile
     assert "3fc8d1491d1313c0ca64b2b95772972b7f42ee9d" in dockerfile
     assert "tests/spark_b12x_no_gpu_smoke.py" in dockerfile
     assert "tests/spark_dcp_swa_no_gpu_smoke.py" in dockerfile

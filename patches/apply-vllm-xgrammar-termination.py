@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Backport vLLM's termination-safe xgrammar speculative token batches."""
+"""Backport vLLM's speculative xgrammar termination/reasoning fixes.
+
+Backports:
+
+* vllm-project/vllm#52805: stop a token batch when its grammar terminates.
+* vllm-project/vllm#53046: validate speculative tokens immediately after a
+  reasoning boundary before attempting to advance the grammar FSM.
+"""
 
 from __future__ import annotations
 
@@ -21,7 +28,10 @@ def main() -> None:
 
     root = Path(sys.argv[1]).resolve()
     path = root / "v1/structured_output/backend_xgrammar.py"
+    manager_path = root / "v1/structured_output/__init__.py"
     if not path.is_file():
+        raise RuntimeError(f"not a vLLM package root: {root}")
+    if not manager_path.is_file():
         raise RuntimeError(f"not a vLLM package root: {root}")
 
     replace_once(
@@ -102,6 +112,27 @@ def main() -> None:
         self._is_terminated = False
 ''',
         "termination-state reset",
+    )
+    replace_once(
+        manager_path,
+        '''                    if advance_grammar and not grammar.is_terminated():
+                        accepted = grammar.accept_tokens(req_id, [token])
+                        if accepted:
+                            state_advancements += 1
+                        elif not post_reasoning_end_in_window:
+''',
+        '''                    if advance_grammar and not grammar.is_terminated():
+                        if post_reasoning_end_in_window:
+                            accepted = bool(grammar.validate_tokens([token]))
+                            if accepted:
+                                accepted = grammar.accept_tokens(req_id, [token])
+                        else:
+                            accepted = grammar.accept_tokens(req_id, [token])
+                        if accepted:
+                            state_advancements += 1
+                        elif not post_reasoning_end_in_window:
+''',
+        "post-reasoning speculative token validation",
     )
 
 

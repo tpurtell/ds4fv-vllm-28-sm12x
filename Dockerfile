@@ -176,7 +176,7 @@ LABEL org.opencontainers.image.title="DeepSeek V4 Flash/Vision for DGX Spark" \
       io.tpurtell.b12x.commit="${B12X_COMMIT}" \
       io.tpurtell.b12x.vllm-adapter.commit="${B12X_VLLM_ADAPTER_COMMIT}" \
       io.tpurtell.exl3.source.sha256="209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c" \
-      io.tpurtell.vllm.backports="52836,54048,54815,54838,48922,51262,51031,54277" \
+      io.tpurtell.vllm.backports="52805,52836,53046,54048,54815,54838,48922,51262,51031,54277" \
       io.tpurtell.ray.version="${RAY_VERSION}"
 
 ENV PYTHONPATH=/opt/b12x:/usr/local/lib/python3.12/dist-packages \
