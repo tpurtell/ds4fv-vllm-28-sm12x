@@ -1,17 +1,46 @@
-# DeepSeek V4 Flash/Vision on two DGX Sparks
+# DeepSeek V4 Flash/Vision on one DGX Spark
 
-This repository builds an **arm64-only, NVIDIA GB10 / SM121** vLLM image for
-`deepseek-ai/DeepSeek-V4-Flash-0731` and
-`deepseek-ai/DeepSeek-V4-Flash-Vision-Exp`. The no-option serving profile is
-the one-Spark Vision EXL3 K2.2/D2 checkpoint with FP8 KV cache. Native
-checkpoints use two DGX Sparks; an amd64 image is intentionally out of scope
-until the EXL3 quantization work is complete.
+This repository builds an **arm64-only, NVIDIA GB10 / SM121** vLLM image whose
+primary deployment is the one-Spark Vision EXL3 K2.2/D2 checkpoint with FP8 KV
+cache. The same build can run the official native DeepSeek V4 Flash/Vision
+checkpoints across two Sparks for direct evaluation and quality comparison; the
+two-Spark profile is not the primary deployment. An amd64 image is intentionally
+out of scope until the EXL3 quantization work is complete.
 
 The current milestone pins vLLM 0.28.0 and the current `tpurtell/sparkinfer-glmrt`
 B12x tree. Vision support is implemented in-recipe because the experimental
 checkpoint advertises the text-only `DeepseekV4ForCausalLM` architecture even
 though it contains a 32-layer vision tower, multimodal router biases, and
 bidirectional image-block attention.
+
+## One-Spark quick start
+
+The default profile serves
+`wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1` with FP8 KV,
+a 500K maximum model length, prefix caching, and fixed greedy K3 drafting:
+
+```bash
+SPARK_HOST=kiwi \
+DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.0 \
+scripts/launch-one-spark-exl3.sh
+```
+
+The launcher defaults to `dodo` when `SPARK_HOST` is omitted. To use the
+qualified higher-capacity NVFP4 DS-MLA cache:
+
+```bash
+SPARK_HOST=kiwi \
+DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.0 \
+KV_CACHE_DTYPE=nvfp4_ds_mla \
+scripts/launch-one-spark-exl3.sh
+```
+
+The older text K2.1 checkpoint remains available with `MODEL_KIND=text`, but
+it is not part of the final performance/quality evidence matrix. Any compatible
+profile may opt into NVFP4; the backend fails closed when the required
+DeepSeek-V4/B12x path is unavailable. FP8 is the qualified production default,
+and NVFP4 is the qualified higher-capacity option for the primary Vision EXL3
+model.
 
 ## Safety boundary
 
@@ -28,8 +57,8 @@ source-only checks that do not import vLLM or initialize CUDA.
 | vLLM | `0.28.0` (`2cf0a6915ce544dc493a0990f2ea38d81601128a`) |
 | Ray | `2.48.0` |
 | B12x | `tpurtell/sparkinfer-glmrt@3fc8d1491d1313c0ca64b2b95772972b7f42ee9d` |
-| Native checkpoint | `deepseek-ai/DeepSeek-V4-Flash-0731@9e165c30e2704aec5d9d593cce3eebd58bbef1cb` |
-| Vision checkpoint | `deepseek-ai/DeepSeek-V4-Flash-Vision-Exp@86f746b36186f0e567729a5c06a8c918caba82a9` |
+| Native comparison checkpoint | `deepseek-ai/DeepSeek-V4-Flash-0731@9e165c30e2704aec5d9d593cce3eebd58bbef1cb` |
+| Native Vision comparison checkpoint | `deepseek-ai/DeepSeek-V4-Flash-Vision-Exp@86f746b36186f0e567729a5c06a8c918caba82a9` |
 
 See [PROVENANCE.md](PROVENANCE.md) for package and checkpoint details and
 [TUNING.md](TUNING.md) for the adaptation log and qualification status.
@@ -47,11 +76,15 @@ docker build --platform linux/arm64 --progress=plain \
 The Dockerfile rejects non-`aarch64` builds and sets the CuTe target to
 `sm_121a`. The final image contains no amd64 build stage.
 
-## Two-Spark launch
+## Native official-model evaluation (two Sparks)
 
-The launcher defaults to `ostrich` (`10.55.0.1`) plus `dodo` (`10.55.0.2`),
-uses both active RoCE HCAs at GID index 3, and starts one Ray GPU worker per
-Spark. The same image tag and Hugging Face cache path must exist on both nodes.
+This evaluator runs the official unquantized checkpoint with the same image
+used above, allowing direct performance and quality comparisons against the
+one-Spark quantized model. It is not the primary serving recipe. The launcher
+defaults to `ostrich`
+(`10.55.0.1`) plus `dodo` (`10.55.0.2`), uses both active RoCE HCAs at GID
+index 3, and starts one Ray GPU worker per Spark. The same image tag and Hugging
+Face cache path must exist on both nodes.
 
 Check the fabric without starting containers:
 
@@ -60,7 +93,7 @@ scripts/launch-two-spark.sh --check-only
 ```
 
 Launch the pinned native Vision checkpoint with TP2 across both Sparks. The
-release default uses DCP1, so each rank retains a complete KV view:
+evaluation profile defaults to DCP1, so each rank retains a complete KV view:
 
 ```bash
 DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.0 \
@@ -134,34 +167,13 @@ structured/tool parsing, and (for Vision) 1/4/16-image paths. Set
 release candidate. Triton, TileLang, B12x, and FlashInfer JIT caches persist on
 the mounted Hugging Face cache volume.
 
-## Default one-Spark Vision EXL3 launch
-
-The new mixed Vision K2.2/D2 checkpoint fits on one Spark and uses the same
-image. This is the recipe's no-option model profile; FP8 KV, 500K maximum model
-length, prefix caching, and greedy K3 drafting are the defaults:
-
-```bash
-SPARK_HOST=kiwi \
-DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.0 \
-scripts/launch-one-spark-exl3.sh
-```
-
-It serves as `deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1` by default.
-The older text K2.1 checkpoint remains available with `MODEL_KIND=text`, but it
-is not part of the final performance/quality evidence matrix. Any compatible
-profile may opt into NVFP4 DS-MLA with `KV_CACHE_DTYPE=nvfp4_ds_mla`; the
-backend fails closed when the required DeepSeek-V4/B12x path is unavailable.
-Only the primary Vision EXL3 profile is being qualified for release capacity,
-quality, and performance claims. FP8 is its qualified production default;
-NVFP4 is the qualified higher-capacity option.
-
 ## Release benchmarks
 
 The measured results are in [benchmarks/RESULTS.md](benchmarks/RESULTS.md), and
 the frozen-image harness is documented in [benchmarks/README.md](benchmarks/README.md).
-It measures native Vision
-TP2+DCP1 with FP8 and the primary one-Spark Vision EXL3 model with matched FP8
-and NVFP4 runs. The suites cover code-agent decode/concurrency and context
+It measures the primary one-Spark Vision EXL3 model with matched FP8 and NVFP4
+runs, plus native Vision TP2+DCP1 with FP8 as the same-build official-model
+comparison. The suites cover code-agent decode/concurrency and context
 depth curves, unique 8K--128K prefill, the weighted semantic/structured blend,
 tool use, 128K retrieval, role-specific Vision or prefix-cache checks, and a
 post-long-context C4 soak. The harness normally freezes one exact candidate
@@ -173,9 +185,10 @@ provenance are documented with the results.
 Release `v0.1.0` is qualified for arm64 GB10/SM121. The exact release image
 `sha256:dcafc6bf649d70a014ff4350eba85cd7e721dec0ecb9a24ea38bd58401ffe8bd`
 passed final startup, structured/tool, Vision/APC, decode-envelope, and
-post-ready JIT checks. Native Vision TP2+DCP1 reached 51.38 tok/s at C1,
-137.22 tok/s aggregate at C4, and 2,081 prompt tok/s at 8K; the one-Spark
-Vision EXL3 default reached 39.66/58.28/130.24 tok/s at C1/C2/C4 with FP8 KV.
+post-ready JIT checks. The one-Spark Vision EXL3 default reached
+39.66/58.28/130.24 tok/s at C1/C2/C4 with FP8 KV. For comparison, native
+Vision TP2+DCP1 reached 51.38 tok/s at C1, 137.22 tok/s aggregate at C4, and
+2,081 prompt tok/s at 8K.
 On the exact release image, NVFP4 increased the one-Spark physical KV pool
 from 1.762M to 2.039M tokens (+15.7%) while retaining the same 500K request
 limit.
