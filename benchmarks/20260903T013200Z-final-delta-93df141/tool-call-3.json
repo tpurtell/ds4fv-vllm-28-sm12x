@@ -1,0 +1,39 @@
+{
+  "schema": "ds4fv-tool-call.v1",
+  "passed": true,
+  "provenance": {
+    "role": "native-vision",
+    "image_id": "sha256:dcafc6bf649d70a014ff4350eba85cd7e721dec0ecb9a24ea38bd58401ffe8bd",
+    "recipe_commit": "93df1414cd5aa558d7064706e8d37c93651c59c6",
+    "model": "deepseek-v4-flash-vision-exp-native"
+  },
+  "expected": {
+    "name": "get_weather",
+    "arguments": {
+      "location": "Berlin"
+    }
+  },
+  "observed_tool_calls": [
+    {
+      "id": "chatcmpl-tool-8ead327572fb7fee",
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "arguments": "{\"location\": \"Berlin\"}"
+      }
+    }
+  ],
+  "parsed_arguments": {
+    "location": "Berlin"
+  },
+  "issues": [],
+  "usage": {
+    "prompt_tokens": 289,
+    "total_tokens": 344,
+    "completion_tokens": 55,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  }
+}

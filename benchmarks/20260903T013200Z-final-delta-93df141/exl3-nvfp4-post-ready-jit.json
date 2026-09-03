@@ -1,0 +1,27 @@
+{
+  "schema": "ds4fv-release-startup-jit-audit.v1",
+  "container": "ds4fv-final-nvfp4",
+  "image": "ds4fv-vllm-28-sm12x:prod-candidate-93df141",
+  "image_id": "sha256:dcafc6bf649d70a014ff4350eba85cd7e721dec0ecb9a24ea38bd58401ffe8bd",
+  "container_state": "running",
+  "health_status_at_audit": "healthy",
+  "ready_marker": "2026-09-03T01:44:48.641899053Z DS4FV release startup warmup complete; container is ready.",
+  "pre_ready_jit_count": 9,
+  "pre_ready_jit_kernels": [
+    "_compute_global_topk_indices_and_lens_kernel",
+    "_compute_local_logits_stats_kernel",
+    "_compute_swa_indices_and_lens_kernel",
+    "_gumbel_sample_kernel",
+    "_prepare_dflash_inputs_kernel",
+    "_rejection_kernel",
+    "_resample_kernel",
+    "mhc_pre_big_fuse_broadcast_with_norm_tilelang",
+    "mhc_pre_big_fuse_with_norm_tilelang"
+  ],
+  "post_ready_request_count": 10,
+  "post_ready_health_200_count": 12,
+  "post_ready_jit_count": 0,
+  "post_ready_jit_kernels": [],
+  "post_ready_jit_events": [],
+  "passed": true
+}

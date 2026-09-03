@@ -63,7 +63,7 @@ Launch the pinned native Vision checkpoint with TP2 across both Sparks. The
 release default uses DCP1, so each rank retains a complete KV view:
 
 ```bash
-DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:native-dev \
+DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.0 \
 scripts/launch-two-spark.sh
 ```
 
@@ -78,7 +78,7 @@ release suite verifies both exact-image reuse and changed-image isolation:
 
 ```bash
 MOE_MODE=tp \
-DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:native-dev \
+DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.0 \
 scripts/launch-two-spark.sh
 ```
 
@@ -142,7 +142,7 @@ length, prefix caching, and greedy K3 drafting are the defaults:
 
 ```bash
 SPARK_HOST=kiwi \
-DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:native-dev \
+DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.0 \
 scripts/launch-one-spark-exl3.sh
 ```
 
@@ -152,28 +152,33 @@ is not part of the final performance/quality evidence matrix. Any compatible
 profile may opt into NVFP4 DS-MLA with `KV_CACHE_DTYPE=nvfp4_ds_mla`; the
 backend fails closed when the required DeepSeek-V4/B12x path is unavailable.
 Only the primary Vision EXL3 profile is being qualified for release capacity,
-quality, and performance claims. FP8 remains its production default until that
-matched gate passes.
+quality, and performance claims. FP8 is its qualified production default;
+NVFP4 is the qualified higher-capacity option.
 
 ## Release benchmarks
 
-The frozen-image harness is documented in
-[benchmarks/README.md](benchmarks/README.md). It measures native Vision
+The measured results are in [benchmarks/RESULTS.md](benchmarks/RESULTS.md), and
+the frozen-image harness is documented in [benchmarks/README.md](benchmarks/README.md).
+It measures native Vision
 TP2+DCP1 with FP8 and the primary one-Spark Vision EXL3 model with matched FP8
 and NVFP4 runs. The suites cover code-agent decode/concurrency and context
 depth curves, unique 8K--128K prefill, the weighted semantic/structured blend,
 tool use, 128K retrieval, role-specific Vision or prefix-cache checks, and a
-post-long-context C4 soak; full runs begin only after both roles use one exact
-production-candidate image ID.
+post-long-context C4 soak. The harness normally freezes one exact candidate
+image ID; the transparent `v0.1.0` final-digest delta exception and exact
+provenance are documented with the results.
 
 ## Status
 
-The combined image builds independently on both arm64 Sparks, and its B12x
-TP/EP plus Vision contract smokes pass with CUDA hidden. Native Vision TP2 and
-dense-TP2/MoE-EP2 both load all 48 shards, complete warmup/graph capture, and
-serve image-sensitive requests across `ostrich` and `dodo`. On the retained
-8,192+1, concurrency-one workload, TP2 reached 2,187.25 tok/s versus 1,947.72
-tok/s for EP2, so TP2 is the default.
+Release `v0.1.0` is qualified for arm64 GB10/SM121. The exact release image
+`sha256:dcafc6bf649d70a014ff4350eba85cd7e721dec0ecb9a24ea38bd58401ffe8bd`
+passed final startup, structured/tool, Vision/APC, decode-envelope, and
+post-ready JIT checks. Native Vision TP2+DCP1 reached 51.38 tok/s at C1,
+137.22 tok/s aggregate at C4, and 2,081 prompt tok/s at 8K; the one-Spark
+Vision EXL3 default reached 39.66/58.28/130.24 tok/s at C1/C2/C4 with FP8 KV.
+On the exact release image, NVFP4 increased the one-Spark physical KV pool
+from 1.762M to 2.039M tokens (+15.7%) while retaining the same 500K request
+limit.
 
 See the [no-GPU contract evidence](validation/2026-09-01-spark-no-gpu.md) and
 [native Vision TP2/EP2 runtime evidence](validation/2026-09-01-spark-tp2-vision.md).
@@ -181,8 +186,7 @@ The [native text TP2 runtime](validation/2026-09-01-spark-tp2-text.md) also
 loads all shards, serves correctly, and reaches 2,234.87 tok/s on its retained
 8,192+1 baseline. The retained matched fabric test makes merged dual rail the
 default, and the [compressed MLA qualification](validation/2026-09-02-b12x-compressed-mla.md)
-records why its faster isolated B12x kernel remains opt-in. Reference-logit
-comparison and longer reliability testing remain pending. Native Vision now
-also reaches strict ready state with TP2+DCP1, APC, and a 500K model length;
-the committed-image release suite remains before publication. The mixed K2/K3
-microbenchmark and matched one-Spark full-model gates have passed.
+records why its faster isolated B12x kernel remains opt-in. The mixed K2/K3
+microbenchmark and matched one-Spark full-model gates passed. Reference-logit
+comparison and destructive worker/fabric recovery testing remain future work;
+they are not claims of this release.

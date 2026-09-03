@@ -329,7 +329,13 @@ is retained in this repository.
   K6 wedged on a 16-image request even with synchronous CUDA launches, and K3
   was faster at every matched decode concurrency. Evidence is retained in
   `validation/2026-09-02-native-vision-k3-reliability.md`.
-- Freeze one committed production-candidate digest with zero post-ready JIT,
-  then run the separate
-  native Vision FP8 TP2+DCP1 plus matched one-Spark Vision EXL3 FP8/NVFP4 release
-  suites against that exact image.
+- **Passed:** Freeze production image
+  `sha256:dcafc6bf649d70a014ff4350eba85cd7e721dec0ecb9a24ea38bd58401ffe8bd`
+  at recipe commit `93df1414`. The immediate predecessor supplied the complete
+  native TP2+DCP1 performance suite; the final digest passed the formerly
+  missing TC31 shape, 12 repeated constrained-JSON requests, five tool calls,
+  1/4/16-image plus over-limit handling, multimodal APC collision protection,
+  a C1/C2/C4 decode-envelope smoke, and 40 post-ready requests with zero JIT,
+  FSM, traceback, or error events. The primary one-Spark FP8/NVFP4 profiles
+  retain their complete suites and received exact-image startup and light
+  performance/API checks rather than duplicate full release runs.

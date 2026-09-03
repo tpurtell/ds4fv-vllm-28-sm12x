@@ -1,0 +1,93 @@
+{
+  "schema": "ds4fv-final-delta-structured.v1",
+  "model": "deepseek-v4-flash-vision-exp-native",
+  "attempts": 12,
+  "valid": 12,
+  "passed": true,
+  "records": [
+    {
+      "index": 0,
+      "valid_schema": true,
+      "content": "{\"ordinal\": 0, \"label\": \"item-0\", \"ok\": true}",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.6141334939748049
+    },
+    {
+      "index": 1,
+      "valid_schema": true,
+      "content": "{\"ordinal\": 1, \"label\": \"item-1\", \"ok\": true}",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.5681272919755429
+    },
+    {
+      "index": 2,
+      "valid_schema": true,
+      "content": "{\"ordinal\": 2, \"label\": \"item-2\", \"ok\": true}",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.5695412058848888
+    },
+    {
+      "index": 3,
+      "valid_schema": true,
+      "content": "{\"ordinal\": 3, \"label\": \"item-3\", \"ok\": true}",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.5835321000777185
+    },
+    {
+      "index": 4,
+      "valid_schema": true,
+      "content": "{\"ordinal\": 4, \"label\": \"item-4\", \"ok\": true}",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.6321865990757942
+    },
+    {
+      "index": 5,
+      "valid_schema": true,
+      "content": "{\"ordinal\": 5, \"label\": \"item-5\", \"ok\": true}",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.6362215660046786
+    },
+    {
+      "index": 6,
+      "valid_schema": true,
+      "content": "{\"ordinal\": 6, \"label\": \"item-6\", \"ok\": true}",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.6233560810796916
+    },
+    {
+      "index": 7,
+      "valid_schema": true,
+      "content": "{\"ordinal\": 7, \"label\": \"item-7\", \"ok\": true}",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.6216413360089064
+    },
+    {
+      "index": 8,
+      "valid_schema": true,
+      "content": "{\"ordinal\": 8, \"label\": \"item-8\", \"ok\": true}",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.6160085150040686
+    },
+    {
+      "index": 9,
+      "valid_schema": true,
+      "content": "{\"ordinal\": 9, \"label\": \"item-9\", \"ok\": true}",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.6197982130106539
+    },
+    {
+      "index": 10,
+      "valid_schema": true,
+      "content": "{\"ordinal\": 10, \"label\": \"item-10\", \"ok\": true}",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.6111083670984954
+    },
+    {
+      "index": 11,
+      "valid_schema": true,
+      "content": "{\"ordinal\": 11, \"label\": \"item-11\", \"ok\": true}",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.6190002730581909
+    }
+  ]
+}

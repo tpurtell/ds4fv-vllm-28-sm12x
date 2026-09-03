@@ -4,6 +4,20 @@ This recipe is intentionally reproducible from immutable inputs. Floating tags
 may be used as human-friendly aliases after qualification, but they are not
 used as build inputs.
 
+## v0.1.0 release image
+
+- OCI image ID:
+  `sha256:dcafc6bf649d70a014ff4350eba85cd7e721dec0ecb9a24ea38bd58401ffe8bd`
+- Recipe source embedded in the image:
+  `93df1414cd5aa558d7064706e8d37c93651c59c6`
+- Platform: `linux/arm64`; CUDA target: `sm_121a`
+- Registry aliases: `ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.0` and
+  `ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:latest`
+
+The same full image ID was verified on `emu`, `kiwi`, `ostrich`, and `dodo`.
+Performance provenance and the final-digest delta policy are recorded in
+[benchmarks/RESULTS.md](benchmarks/RESULTS.md).
+
 ## Runtime
 
 - Base image: `vllm/vllm-openai@sha256:2a7cde230b59f3ce6cab33dd245ba6bee41aa87b38c9fe84f966ff24016813ce`

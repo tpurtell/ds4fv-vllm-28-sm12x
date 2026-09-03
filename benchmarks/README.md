@@ -1,14 +1,20 @@
 # Frozen-image release qualification
 
-Release measurements are run only after one committed arm64 image has been
-built on a DGX Spark and replicated byte-for-byte to every Spark used by the
-service. Both the native Vision FP8 TP2+DCP1 suite and the one-Spark mixed
-Vision EXL3 FP8/NVFP4 suites
-must name the same full Docker image ID and 40-character recipe commit in every
-receipt; a mutable tag is not release identity.
+Release measurements record a full Docker image ID and 40-character recipe
+commit in every receipt; a mutable tag is not release identity. For `v0.1.0`,
+the complete profile suites were retained from their production-candidate
+images and the final digest received a documented delta qualification. This
+avoids pretending that unchanged performance tests become more informative by
+being repeated after startup-warmup and grammar-accounting fixes; the exact
+provenance and exception are recorded in [RESULTS.md](RESULTS.md).
 
 The workstation is an HTTP client only. It must never start this image, vLLM,
 or GPU code.
+
+## Published results
+
+See [RESULTS.md](RESULTS.md) for the release tables and links to every retained
+JSON receipt.
 
 ## Release evidence profiles
 

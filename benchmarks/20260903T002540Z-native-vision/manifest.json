@@ -1,0 +1,30 @@
+{
+  "schema": "ds4fv-release-suite-manifest.v1",
+  "started_utc": "2026-09-03T00:25:54.472572+00:00",
+  "role": "native-vision",
+  "base_url": "http://10.55.0.3:8000",
+  "model": "deepseek-v4-flash-vision-exp-native",
+  "image_id": "sha256:7758b0d702aafe477fec8b8f65cb02a9689bf02322d196c8805d68afbd3bbfdb",
+  "recipe_commit": "63b7e932b3b9f4ad11e7e2978418d6deac2bd048",
+  "dspark_tokens": 3,
+  "dspark_policy": "fixed",
+  "draft_sample_method": "greedy",
+  "content_contract_floor": 38,
+  "kv_cache_dtype": "fp8",
+  "tool_eval_bench": {
+    "artifact": "tool-eval-bench.json",
+    "version": "2.3.2.dev3+g5df1e9e0c",
+    "run_id": "2026-09-03T00-48-57.890357Z_8bf2145b",
+    "scenario_count": 69,
+    "points": 114,
+    "max_points": 138,
+    "normalized_score": 83,
+    "rating": "\u2605\u2605\u2605\u2605 Good",
+    "pass_count": 51,
+    "partial_count": 12,
+    "fail_count": 6,
+    "status": "completed"
+  },
+  "completed_utc": "2026-09-03T01:04:06.105751+00:00",
+  "passed": true
+}

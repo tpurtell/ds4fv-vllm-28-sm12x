@@ -1,0 +1,59 @@
+{
+  "schema": "ds4fv-release-delta-manifest.v1",
+  "release": "v0.1.0",
+  "role": "native-vision",
+  "model": "deepseek-v4-flash-vision-exp-native",
+  "image_id": "sha256:dcafc6bf649d70a014ff4350eba85cd7e721dec0ecb9a24ea38bd58401ffe8bd",
+  "recipe_commit": "93df1414cd5aa558d7064706e8d37c93651c59c6",
+  "full_suite_predecessor": {
+    "directory": "../20260903T002540Z-native-vision",
+    "image_id": "sha256:7758b0d702aafe477fec8b8f65cb02a9689bf02322d196c8805d68afbd3bbfdb",
+    "recipe_commit": "63b7e932b3b9f4ad11e7e2978418d6deac2bd048",
+    "passed": true
+  },
+  "checks": {
+    "tc31": "tool-eval-tc31.json",
+    "decode_envelope": "code-agent-decode-smoke.json",
+    "structured_repeated": "structured-repeated.json",
+    "tool_calls": [
+      "tool-call-1.json",
+      "tool-call-2.json",
+      "tool-call-3.json",
+      "tool-call-4.json",
+      "tool-call-5.json"
+    ],
+    "vision": "native-vision-smoke.json",
+    "vision_prefix_replay": "vision-prefix-replay-smoke.json",
+    "post_ready_jit": "final-post-ready-jit.json",
+    "post_ready_log_audit": "final-log-audit.json",
+    "exl3_fp8_decode_envelope": "exl3-fp8-decode-smoke.json",
+    "exl3_fp8_post_ready_jit": "exl3-fp8-post-ready-jit.json",
+    "exl3_nvfp4_decode_envelope": "exl3-nvfp4-decode-smoke.json",
+    "exl3_nvfp4_post_ready_jit": "exl3-nvfp4-post-ready-jit.json"
+  },
+  "one_spark_exact_image": {
+    "fp8": {
+      "kv_cache_tokens": 1762308,
+      "maximum_500k_concurrency": 3.52,
+      "c1_median_tokens_per_second": 40.081697,
+      "c4_median_tokens_per_second": 127.705997,
+      "post_ready_jit_count": 0,
+      "passed": true
+    },
+    "nvfp4_ds_mla": {
+      "kv_cache_tokens": 2039387,
+      "maximum_500k_concurrency": 4.08,
+      "c1_median_tokens_per_second": 38.547789,
+      "c4_median_tokens_per_second": 119.776380,
+      "post_ready_jit_count": 0,
+      "passed": true
+    }
+  },
+  "post_ready_request_count": 40,
+  "post_ready_jit_count": 0,
+  "structured_passes": 12,
+  "structured_total": 12,
+  "tool_call_passes": 5,
+  "tool_call_total": 5,
+  "passed": true
+}

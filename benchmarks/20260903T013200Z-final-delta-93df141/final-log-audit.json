@@ -1,0 +1,23 @@
+{
+  "schema": "ds4fv-final-log-audit.v1",
+  "post_ready_line_count": 134,
+  "patterns": {
+    "Failed to advance FSM": {
+      "count": 0,
+      "lines": []
+    },
+    "matcher terminated after accepting stop token": {
+      "count": 0,
+      "lines": []
+    },
+    "Traceback (most recent call last)": {
+      "count": 0,
+      "lines": []
+    },
+    " ERROR ": {
+      "count": 0,
+      "lines": []
+    }
+  },
+  "passed": true
+}
