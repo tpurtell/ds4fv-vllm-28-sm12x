@@ -70,6 +70,12 @@ COPY patches/apply-vllm-dsv4-tokenizer-threadsafe.py \
      /tmp/apply-vllm-dsv4-tokenizer-threadsafe.py
 COPY patches/apply-vllm-xgrammar-termination.py \
      /tmp/apply-vllm-xgrammar-termination.py
+COPY patches/apply-vllm-post-028-correctness.py \
+     /tmp/apply-vllm-post-028-correctness.py
+COPY patches/apply-vllm-post-028-agent-fixes.py \
+     /tmp/apply-vllm-post-028-agent-fixes.py
+COPY patches/apply-vllm-post-028-dcp.py \
+     /tmp/apply-vllm-post-028-dcp.py
 COPY patches/apply-flashinfer-dspark-sm121.py \
      /tmp/apply-flashinfer-dspark-sm121.py
 COPY --from=exl3_source \
@@ -109,6 +115,12 @@ RUN echo "209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c  ${VL
       "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 /tmp/apply-vllm-xgrammar-termination.py \
       "${VLLM_SITE_PACKAGES}/vllm" \
+ && python3 /tmp/apply-vllm-post-028-correctness.py \
+      "${VLLM_SITE_PACKAGES}/vllm" \
+ && python3 /tmp/apply-vllm-post-028-agent-fixes.py \
+      "${VLLM_SITE_PACKAGES}/vllm" \
+ && python3 /tmp/apply-vllm-post-028-dcp.py \
+      "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 -m compileall -q "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 -m py_compile \
       "${VLLM_SITE_PACKAGES}/flashinfer/mla/_sparse_mla_sm120.py" \
@@ -125,6 +137,9 @@ RUN echo "209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c  ${VL
        /tmp/apply-vllm-dcp-rate-aware.py \
        /tmp/apply-vllm-dsv4-tokenizer-threadsafe.py \
        /tmp/apply-vllm-xgrammar-termination.py \
+       /tmp/apply-vllm-post-028-correctness.py \
+       /tmp/apply-vllm-post-028-agent-fixes.py \
+       /tmp/apply-vllm-post-028-dcp.py \
        /tmp/apply-flashinfer-dspark-sm121.py
 
 COPY scripts/start-native.sh /opt/ds4fv/bin/start-native
@@ -138,12 +153,14 @@ COPY tests/spark_dcp_rate_aware_no_gpu_smoke.py /opt/ds4fv/tests/spark_dcp_rate_
 COPY tests/spark_dsv4_tokenizer_threadsafe_no_gpu.py /opt/ds4fv/tests/spark_dsv4_tokenizer_threadsafe_no_gpu.py
 COPY tests/spark_xgrammar_termination_no_gpu.py /opt/ds4fv/tests/spark_xgrammar_termination_no_gpu.py
 COPY tests/spark_vision_layout_hash_no_gpu_smoke.py /opt/ds4fv/tests/spark_vision_layout_hash_no_gpu_smoke.py
+COPY tests/spark_post_028_no_gpu_smoke.py /opt/ds4fv/tests/spark_post_028_no_gpu_smoke.py
 RUN CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_dcp_swa_no_gpu_smoke.py \
  && CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_dcp_dsv4_no_gpu_smoke.py \
  && CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_dcp_rate_aware_no_gpu_smoke.py \
  && CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_dsv4_tokenizer_threadsafe_no_gpu.py \
  && CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_xgrammar_termination_no_gpu.py \
  && CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_vision_layout_hash_no_gpu_smoke.py \
+ && CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_post_028_no_gpu_smoke.py \
  && chmod 0755 /opt/ds4fv/bin/start-native /opt/ds4fv/bin/release-warmup
 
 # Keep the recipe identity in a metadata-only tail layer so changing the
@@ -159,6 +176,7 @@ LABEL org.opencontainers.image.title="DeepSeek V4 Flash/Vision for DGX Spark" \
       io.tpurtell.b12x.commit="${B12X_COMMIT}" \
       io.tpurtell.b12x.vllm-adapter.commit="${B12X_VLLM_ADAPTER_COMMIT}" \
       io.tpurtell.exl3.source.sha256="209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c" \
+      io.tpurtell.vllm.backports="52836,54048,54815,54838,48922,51262,51031,54277" \
       io.tpurtell.ray.version="${RAY_VERSION}"
 
 ENV PYTHONPATH=/opt/b12x:/usr/local/lib/python3.12/dist-packages \
@@ -172,7 +190,9 @@ ENV PYTHONPATH=/opt/b12x:/usr/local/lib/python3.12/dist-packages \
     VLLM_CACHE_ROOT=/cache/huggingface/vllm-cache \
     VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS=1800 \
     VLLM_USE_BREAKABLE_CUDAGRAPH=0 \
-    VLLM_WORKER_MULTIPROC_METHOD=spawn
+    VLLM_WORKER_MULTIPROC_METHOD=spawn \
+    INSTANTTENSOR_BACKEND=BUFFERED \
+    INSTANTTENSOR_IO_DEPTH=128
 
 WORKDIR /workspace
 

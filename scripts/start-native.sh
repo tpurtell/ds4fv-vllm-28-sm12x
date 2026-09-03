@@ -276,6 +276,7 @@ serve_model() {
 
 serve_exl3() {
   local model_kind=${MODEL_KIND:-vision}
+  local exl3_profile=${EXL3_PROFILE:-k2.2}
   local dspark_default_tokens=5
   local gpu_memory_default=0.85
   local max_model_len_default=500000
@@ -290,9 +291,22 @@ serve_exl3() {
       warmup_role=exl3
       ;;
     vision)
-      model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1}
-      model_revision=${MODEL_REVISION:-8aab722f04f7e8963af83de5acb16138474e0228}
-      served_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1}
+      case "${exl3_profile}" in
+        k2)
+          model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2-v1}
+          model_revision=${MODEL_REVISION:-419697c409cb4157471bcaf68be07dbd151b0a40}
+          served_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-vision-exp-exl3-k2-v1}
+          ;;
+        k2.2)
+          model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1}
+          model_revision=${MODEL_REVISION:-8aab722f04f7e8963af83de5acb16138474e0228}
+          served_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1}
+          ;;
+        *)
+          echo "EXL3_PROFILE must be 'k2' or 'k2.2', got '${exl3_profile}'" >&2
+          exit 64
+          ;;
+      esac
       warmup_role=exl3-vision
       dspark_default_tokens=3
       gpu_memory_default=0.86

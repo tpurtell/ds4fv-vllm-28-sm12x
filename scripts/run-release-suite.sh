@@ -10,7 +10,6 @@ model=${MODEL:?MODEL must be the served model name}
 image_id=${IMAGE_ID:?IMAGE_ID must be the frozen sha256 image ID}
 recipe_commit=${RECIPE_COMMIT:-$(git -C "${script_dir}/.." rev-parse HEAD)}
 stamp=${BENCHMARK_STAMP:-$(date -u +%Y%m%dT%H%M%SZ)}
-output_root=${OUTPUT_ROOT:-${script_dir}/../benchmarks/${stamp}-${role}}
 kv_cache_dtype=${KV_CACHE_DTYPE:-fp8}
 tool_eval_reference_date=${TOOL_EVAL_REFERENCE_DATE:-$(date -u +%F)}
 tool_eval_required_version=${TOOL_EVAL_REQUIRED_VERSION:-2.3.2.dev3+g5df1e9e0c}
@@ -33,6 +32,37 @@ case "${role}" in
     exit 64
     ;;
 esac
+if [[ "${kv_cache_dtype}" != fp8 ]]; then
+  echo "The v0.1.1 release evidence matrix is FP8-only; got ${kv_cache_dtype}." >&2
+  exit 64
+fi
+
+qualification_profile=${QUALIFICATION_PROFILE:-}
+if [[ -z "${qualification_profile}" ]]; then
+  case "${model}" in
+    deepseek-v4-flash-vision-exp-native)
+      qualification_profile=official-vision-fp8
+      ;;
+    deepseek-v4-flash-vision-exp-exl3-k2-v1)
+      qualification_profile=vision-exl3-k2-fp8
+      ;;
+    deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1)
+      qualification_profile=vision-exl3-k2.2-fp8
+      ;;
+    *)
+      echo "Set QUALIFICATION_PROFILE for unrecognized served model ${model}." >&2
+      exit 64
+      ;;
+  esac
+fi
+case "${qualification_profile}" in
+  official-vision-fp8|vision-exl3-k2-fp8|vision-exl3-k2.2-fp8) ;;
+  *)
+    echo "Unknown v0.1.1 qualification profile: ${qualification_profile}" >&2
+    exit 64
+    ;;
+esac
+output_root=${OUTPUT_ROOT:-${script_dir}/../benchmarks/${stamp}-${qualification_profile}}
 if [[ ! "${image_id}" =~ ^sha256:[0-9a-f]{64}$ ]]; then
   echo "IMAGE_ID must be a full sha256:<64 hex> image ID" >&2
   exit 64
@@ -74,7 +104,8 @@ if [[ -e "${output_root}" ]] && [[ -n "$(find "${output_root}" -mindepth 1 -maxd
 fi
 mkdir -p "${output_root}"
 
-python3 - "${output_root}/manifest.json" "${role}" "${base_url}" "${model}" \
+python3 - "${output_root}/manifest.json" "${role}" "${qualification_profile}" \
+  "${base_url}" "${model}" \
   "${image_id}" "${recipe_commit}" "${dspark_tokens}" \
   "${content_contract_floor}" "${kv_cache_dtype}" <<'PY'
 import json
@@ -85,6 +116,7 @@ from pathlib import Path
 (
     path,
     role,
+    qualification_profile,
     base_url,
     model,
     image_id,
@@ -97,6 +129,7 @@ Path(path).write_text(json.dumps({
     "schema": "ds4fv-release-suite-manifest.v1",
     "started_utc": datetime.now(timezone.utc).isoformat(),
     "role": role,
+    "qualification_profile": qualification_profile,
     "base_url": base_url,
     "model": model,
     "image_id": image_id,

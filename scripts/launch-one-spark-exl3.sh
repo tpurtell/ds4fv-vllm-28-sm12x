@@ -9,6 +9,7 @@ hf_cache=${HF_CACHE:-/home/tj/.cache/huggingface}
 model_repo=${MODEL_REPO:-}
 model_revision=${MODEL_REVISION:-}
 model_kind=${MODEL_KIND:-vision}
+exl3_profile=${EXL3_PROFILE:-k2.2}
 gpu_memory_utilization=${GPU_MEMORY_UTILIZATION:-}
 max_model_len=${MAX_MODEL_LEN:-}
 max_num_batched_tokens=${MAX_NUM_BATCHED_TOKENS:-}
@@ -60,6 +61,7 @@ remote "${spark_host}" docker run -d \
   -v "${hf_cache}:/cache/huggingface" \
   -e DS4FV_ROLE=exl3 \
   -e MODEL_KIND="${model_kind}" \
+  -e EXL3_PROFILE="${exl3_profile}" \
   -e HF_HOME=/cache/huggingface \
   -e HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}" \
   -e TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-1}" \
@@ -77,6 +79,8 @@ remote "${spark_host}" docker run -d \
   -e PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}" \
   -e CUDA_LAUNCH_BLOCKING="${CUDA_LAUNCH_BLOCKING:-0}" \
   -e LOAD_FORMAT="${LOAD_FORMAT:-instanttensor}" \
+  -e INSTANTTENSOR_BACKEND="${INSTANTTENSOR_BACKEND:-BUFFERED}" \
+  -e INSTANTTENSOR_IO_DEPTH="${INSTANTTENSOR_IO_DEPTH:-128}" \
   -e ENABLE_DSPARK="${ENABLE_DSPARK:-1}" \
   -e DSPARK_TOKENS="${DSPARK_TOKENS:-}" \
   -e DRAFT_SAMPLE_METHOD="${DRAFT_SAMPLE_METHOD:-greedy}" \

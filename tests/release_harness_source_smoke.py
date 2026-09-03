@@ -147,6 +147,11 @@ def main() -> None:
     assert '"${role}" == native-vision || "${role}" == exl3-vision' in runner
     assert '--role "${role}"' in runner
     assert '"kv_cache_dtype": kv_cache_dtype' in runner
+    assert '"qualification_profile": qualification_profile' in runner
+    assert "official-vision-fp8" in runner
+    assert "vision-exl3-k2-fp8" in runner
+    assert "vision-exl3-k2.2-fp8" in runner
+    assert "The v0.1.1 release evidence matrix is FP8-only" in runner
     assert 'content_contract_floor=38' in runner
     assert 'content_contract_floor=34' in runner
     assert '--minimum-contract-passes "${content_contract_floor}"' in runner
@@ -154,6 +159,9 @@ def main() -> None:
     assert "--draft-sample-method greedy" in runner
 
     for fragment in (
+        "DeepSeek-V4-Flash-Vision-Exp-EXL3-K2-v1",
+        "419697c409cb4157471bcaf68be07dbd151b0a40",
+        "deepseek-v4-flash-vision-exp-exl3-k2-v1",
         "DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1",
         "8aab722f04f7e8963af83de5acb16138474e0228",
         "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1",
@@ -179,6 +187,11 @@ def main() -> None:
     assert "apply-vllm-dcp-rate-aware.py" in dockerfile
     assert "apply-vllm-dsv4-tokenizer-threadsafe.py" in dockerfile
     assert "apply-vllm-xgrammar-termination.py" in dockerfile
+    assert "apply-vllm-post-028-correctness.py" in dockerfile
+    assert "apply-vllm-post-028-agent-fixes.py" in dockerfile
+    assert "apply-vllm-post-028-dcp.py" in dockerfile
+    assert "INSTANTTENSOR_BACKEND=BUFFERED" in dockerfile
+    assert "INSTANTTENSOR_IO_DEPTH=128" in dockerfile
     assert "3fc8d1491d1313c0ca64b2b95772972b7f42ee9d" in dockerfile
     assert "tests/spark_b12x_no_gpu_smoke.py" in dockerfile
     assert "tests/spark_dcp_swa_no_gpu_smoke.py" in dockerfile
@@ -187,6 +200,7 @@ def main() -> None:
     assert "tests/spark_dsv4_tokenizer_threadsafe_no_gpu.py" in dockerfile
     assert "tests/spark_xgrammar_termination_no_gpu.py" in dockerfile
     assert "tests/spark_vision_layout_hash_no_gpu_smoke.py" in dockerfile
+    assert "tests/spark_post_028_no_gpu_smoke.py" in dockerfile
     assert "CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_dcp_swa_no_gpu_smoke.py" in dockerfile
 
     release_suite = (ROOT / "scripts/run-release-suite.sh").read_text()
