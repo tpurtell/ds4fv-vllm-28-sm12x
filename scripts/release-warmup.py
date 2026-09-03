@@ -41,6 +41,27 @@ async def run_all(factories, limit=8):
 """
 
 
+# GB10 exposes 48 SMs.  DeepSeek V4's DeepGEMM-backed mHC pre kernels choose
+# split_k as floor(48 / ceil(num_tokens / 64)), so these are the smallest
+# non-FMA token counts that materialize every possible split class.  TileLang
+# treats split_k as static even though num_tokens is dynamic; missing one class
+# otherwise causes a multi-second compile on the first matching live request.
+MHC_SPLIT_WARMUP_TOKENS = (
+    17,
+    65,
+    129,
+    193,
+    257,
+    321,
+    385,
+    513,
+    641,
+    769,
+    1025,
+    1537,
+)
+
+
 def request_json(
     base_url: str, path: str, payload: dict | None, timeout: float
 ) -> dict:
@@ -209,6 +230,32 @@ def main() -> None:
         raise SystemExit("vLLM returned no served model for startup warmup")
     model = models[0]["id"]
     nonce = f"{os.getpid()}-{uuid.uuid4().hex}"
+
+    # Compile every Spark mHC split specialization before health can turn
+    # green.  This is needed even with a persistent TileLang cache because a
+    # new image may change the kernel source hash, and ordinary long-prefill
+    # warmup reaches only split_k=1.
+    for token_count in MHC_SPLIT_WARMUP_TOKENS:
+        mhc_tokens = exact_token_prefix(
+            args.base_url, model, token_count, args.request_timeout
+        )
+        timed_request(
+            f"mHC split class at {token_count} tokens",
+            args.base_url,
+            "/v1/completions",
+            {
+                "model": model,
+                "prompt": mhc_tokens,
+                "add_special_tokens": False,
+                "max_tokens": 1,
+                "min_tokens": 1,
+                "ignore_eos": True,
+                "temperature": 0,
+                "cache_prompt": False,
+                "cache_salt": f"ds4fv-release-mhc-{token_count}-{nonce}",
+            },
+            args.request_timeout,
+        )
 
     # Mia's post-ready sweep covered the exact scheduled-token buckets used by
     # DeepSeek's speculative-input preparation kernel. Do the same before the

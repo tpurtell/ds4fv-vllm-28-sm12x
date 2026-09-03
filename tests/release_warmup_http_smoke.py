@@ -110,7 +110,41 @@ def main() -> None:
         for payload in completion_payloads
         if isinstance(payload.get("prompt"), list)
     }
-    assert {4, 12, 28, 60, 124, 252, 8192, 9500} <= prompt_lengths
+    assert {
+        4,
+        12,
+        17,
+        28,
+        60,
+        65,
+        124,
+        129,
+        193,
+        252,
+        257,
+        321,
+        385,
+        513,
+        641,
+        769,
+        1025,
+        1537,
+        8192,
+        9500,
+    } <= prompt_lengths
+    mhc_payloads = [
+        payload
+        for payload in completion_payloads
+        if "ds4fv-release-mhc-" in payload.get("cache_salt", "")
+    ]
+    assert [len(payload["prompt"]) for payload in mhc_payloads] == list(
+        warmup.MHC_SPLIT_WARMUP_TOKENS
+    )
+    assert all(payload["cache_prompt"] is False for payload in mhc_payloads)
+    assert {
+        max(48 // ((tokens + 63) // 64), 1)
+        for tokens in warmup.MHC_SPLIT_WARMUP_TOKENS
+    } == {48, 24, 16, 12, 9, 8, 6, 5, 4, 3, 2, 1}
     c2_payloads = [
         payload
         for payload in completion_payloads

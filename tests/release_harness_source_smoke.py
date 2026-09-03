@@ -114,6 +114,8 @@ def main() -> None:
     warmup = (ROOT / "scripts/release-warmup.py").read_text()
     for fragment in (
         'choices=("native-text", "native-vision", "exl3", "exl3-vision")',
+        "MHC_SPLIT_WARMUP_TOKENS = (",
+        "for token_count in MHC_SPLIT_WARMUP_TOKENS",
         "for block_size in (8, 16, 32, 64, 128, 256)",
         "args.base_url, model, 9500, args.request_timeout",
         "image_counts = (1, 4, 16)",
@@ -176,12 +178,14 @@ def main() -> None:
     assert "apply-vllm-dcp-dsv4.py" in dockerfile
     assert "apply-vllm-dcp-rate-aware.py" in dockerfile
     assert "apply-vllm-dsv4-tokenizer-threadsafe.py" in dockerfile
+    assert "apply-vllm-xgrammar-termination.py" in dockerfile
     assert "3fc8d1491d1313c0ca64b2b95772972b7f42ee9d" in dockerfile
     assert "tests/spark_b12x_no_gpu_smoke.py" in dockerfile
     assert "tests/spark_dcp_swa_no_gpu_smoke.py" in dockerfile
     assert "tests/spark_dcp_dsv4_no_gpu_smoke.py" in dockerfile
     assert "tests/spark_dcp_rate_aware_no_gpu_smoke.py" in dockerfile
     assert "tests/spark_dsv4_tokenizer_threadsafe_no_gpu.py" in dockerfile
+    assert "tests/spark_xgrammar_termination_no_gpu.py" in dockerfile
     assert "tests/spark_vision_layout_hash_no_gpu_smoke.py" in dockerfile
     assert "CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_dcp_swa_no_gpu_smoke.py" in dockerfile
 

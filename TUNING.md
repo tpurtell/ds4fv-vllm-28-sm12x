@@ -205,7 +205,9 @@ is retained in this repository.
 
 - **Release API contracts:** Both launch roles explicitly enable the native
   DeepSeek V4 tokenizer, reasoning parser, and automatic tool parser; Vision
-  also enforces the qualified 16-image ceiling. The frozen-image suite checks
+  also enforces the qualified 16-image ceiling. vLLM's merged termination-safe
+  xgrammar token-batch fix is backported so speculative decoding stops grammar
+  advancement at a structured-output stop token. The frozen-image suite checks
   exact tool arguments plus 1/4/16-image ordering and image-17 rejection.
 
 - **Frozen-image benchmark harness:** The release runner records an immutable
@@ -219,10 +221,11 @@ is retained in this repository.
   114/138 FP8 and 117/138 NVFP4, with structured output 12/12 in both modes.
 
 - **Release-ready kernel warmup:** Docker health is gated on successful real
-  requests covering DSpark's exact 8--256 scheduling buckets, rendered greedy
-  C1/C2/C4, OpenAI `n=2`/`n=4` choice batches, chunk-crossing prefill,
-  structured/tool parsing, and the Vision 1/4/16-image shapes. The explicit
-  choice batches close the distinct DeepSeek sparse request-map specialization;
+  requests covering all twelve GB10 mHC split classes, DSpark's exact 8--256
+  scheduling buckets, rendered greedy C1/C2/C4, OpenAI `n=2`/`n=4` choice
+  batches, chunk-crossing prefill, structured/tool parsing, and the Vision
+  1/4/16-image shapes. The exhaustive mHC sweep prevents static TileLang
+  `split_k` specializations from compiling on a later medium-prompt request;
   Triton and TileLang caches persist beside the B12x and FlashInfer caches.
 
 - **Native Vision TP2 baseline:** The full 48-shard model now starts on two

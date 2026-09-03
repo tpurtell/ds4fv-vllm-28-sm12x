@@ -68,6 +68,8 @@ COPY patches/apply-vllm-dcp-rate-aware.py \
      /tmp/apply-vllm-dcp-rate-aware.py
 COPY patches/apply-vllm-dsv4-tokenizer-threadsafe.py \
      /tmp/apply-vllm-dsv4-tokenizer-threadsafe.py
+COPY patches/apply-vllm-xgrammar-termination.py \
+     /tmp/apply-vllm-xgrammar-termination.py
 COPY patches/apply-flashinfer-dspark-sm121.py \
      /tmp/apply-flashinfer-dspark-sm121.py
 COPY --from=exl3_source \
@@ -105,6 +107,8 @@ RUN echo "209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c  ${VL
       "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 /tmp/apply-vllm-dsv4-tokenizer-threadsafe.py \
       "${VLLM_SITE_PACKAGES}/vllm" \
+ && python3 /tmp/apply-vllm-xgrammar-termination.py \
+      "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 -m compileall -q "${VLLM_SITE_PACKAGES}/vllm" \
  && python3 -m py_compile \
       "${VLLM_SITE_PACKAGES}/flashinfer/mla/_sparse_mla_sm120.py" \
@@ -120,6 +124,7 @@ RUN echo "209769899a069615e7c8ace17d52515f89ffaf2c73a77532ee45f6de1919710c  ${VL
        /tmp/apply-vllm-dcp-dsv4.py \
        /tmp/apply-vllm-dcp-rate-aware.py \
        /tmp/apply-vllm-dsv4-tokenizer-threadsafe.py \
+       /tmp/apply-vllm-xgrammar-termination.py \
        /tmp/apply-flashinfer-dspark-sm121.py
 
 COPY scripts/start-native.sh /opt/ds4fv/bin/start-native
@@ -131,11 +136,13 @@ COPY tests/spark_dcp_swa_no_gpu_smoke.py /opt/ds4fv/tests/spark_dcp_swa_no_gpu_s
 COPY tests/spark_dcp_dsv4_no_gpu_smoke.py /opt/ds4fv/tests/spark_dcp_dsv4_no_gpu_smoke.py
 COPY tests/spark_dcp_rate_aware_no_gpu_smoke.py /opt/ds4fv/tests/spark_dcp_rate_aware_no_gpu_smoke.py
 COPY tests/spark_dsv4_tokenizer_threadsafe_no_gpu.py /opt/ds4fv/tests/spark_dsv4_tokenizer_threadsafe_no_gpu.py
+COPY tests/spark_xgrammar_termination_no_gpu.py /opt/ds4fv/tests/spark_xgrammar_termination_no_gpu.py
 COPY tests/spark_vision_layout_hash_no_gpu_smoke.py /opt/ds4fv/tests/spark_vision_layout_hash_no_gpu_smoke.py
 RUN CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_dcp_swa_no_gpu_smoke.py \
  && CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_dcp_dsv4_no_gpu_smoke.py \
  && CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_dcp_rate_aware_no_gpu_smoke.py \
  && CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_dsv4_tokenizer_threadsafe_no_gpu.py \
+ && CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_xgrammar_termination_no_gpu.py \
  && CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_vision_layout_hash_no_gpu_smoke.py \
  && chmod 0755 /opt/ds4fv/bin/start-native /opt/ds4fv/bin/release-warmup
 
