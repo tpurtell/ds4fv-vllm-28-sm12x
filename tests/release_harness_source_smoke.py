@@ -388,6 +388,17 @@ def main() -> None:
             assert fragment in host_launcher
 
     one_spark_launcher = (ROOT / "scripts/launch-one-spark-exl3.sh").read_text()
+    assert 'spark_host=${SPARK_HOST:-local}' in one_spark_launcher
+    assert (
+        'image=${DS4FV_IMAGE:-ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.1}'
+        in one_spark_launcher
+    )
+    assert "local|localhost|127.0.0.1|::1" in one_spark_launcher
+    assert "on_spark()" in one_spark_launcher
+    assert "on_spark docker run -d" in one_spark_launcher
+    assert 'HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-0}"' in one_spark_launcher
+    assert 'TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-0}"' in one_spark_launcher
+    assert "/home/tj" not in one_spark_launcher
     assert 'if [[ "${model_kind}" == vision ]]' in one_spark_launcher
     assert "gpu_memory_utilization=0.86" in one_spark_launcher
     assert "max_model_len=500000" in one_spark_launcher

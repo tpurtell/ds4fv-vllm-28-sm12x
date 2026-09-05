@@ -17,23 +17,45 @@ bidirectional image-block attention.
 
 The default profile serves
 `wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1` with FP8 KV,
-a 500K maximum model length, prefix caching, and fixed greedy K3 drafting:
+a 500K maximum model length, prefix caching, and fixed greedy K3 drafting.
+Clone this repository directly on an SM121 DGX Spark and launch it locally:
 
 ```bash
-SPARK_HOST=kiwi \
-DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.1 \
+git clone https://github.com/tpurtell/ds4fv-vllm-28-sm12x.git
+cd ds4fv-vllm-28-sm12x
+scripts/launch-one-spark-exl3.sh
+docker logs -f ds4fv-exl3
+```
+
+No environment variables are required. The launcher runs Docker locally,
+pulls `ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.1` if necessary, and uses
+`${XDG_CACHE_HOME:-$HOME/.cache}/huggingface` for the persistent model and
+compile cache. The first launch can download the large K2.2/D2 checkpoint;
+subsequent launches reuse it. Set `HF_CACHE=/another/path` to use an existing
+cache elsewhere.
+
+Once startup warmup completes, the OpenAI-compatible API is available on port
+8000. Check it locally with:
+
+```bash
+curl http://127.0.0.1:8000/v1/models
+```
+
+If the checkpoint is already complete and the Spark must remain offline, use
+`HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1`. The pure-K2 Vision checkpoint is
+also available as the measured one-Spark quantization comparison:
+
+```bash
+EXL3_PROFILE=k2 \
 scripts/launch-one-spark-exl3.sh
 ```
 
-The launcher defaults to `dodo` when `SPARK_HOST` is omitted. The pure-K2
-Vision checkpoint is also available as the measured one-Spark quantization
-comparison:
+To launch on a Spark over SSH instead, set its hostname explicitly. All Docker
+and GPU activity still occurs on that Spark:
 
 ```bash
-SPARK_HOST=kiwi \
-DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.1 \
-EXL3_PROFILE=k2 \
-scripts/launch-one-spark-exl3.sh
+SPARK_HOST=kiwi scripts/launch-one-spark-exl3.sh
+ssh kiwi docker logs -f ds4fv-exl3
 ```
 
 The older text K2.1 checkpoint remains available with `MODEL_KIND=text`, but
@@ -45,10 +67,11 @@ option rather than a v0.1.1 capacity, quality, or performance claim.
 
 ## Safety boundary
 
-Do not run this image, vLLM, or any GPU validation on the image-build
-workstation. Build and runtime validation belong on the DGX Sparks
-(`ostrich`, `dodo`, `kiwi`, or `emu`). Local checks in this repository are
-source-only checks that do not import vLLM or initialize CUDA.
+Do not run this image, vLLM, or any GPU validation on a non-Spark workstation.
+When the repository is cloned on a DGX Spark, the one-Spark launcher runs
+locally there. From another machine, set `SPARK_HOST` so every Docker and GPU
+action occurs on the selected Spark. Local workstation checks in this
+repository are source-only and do not import vLLM or initialize CUDA.
 
 ## Pinned inputs
 

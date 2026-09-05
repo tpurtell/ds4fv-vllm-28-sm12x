@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Host-side launcher: every Docker and GPU action occurs on the selected Spark.
-spark_host=${SPARK_HOST:-dodo}
-image=${DS4FV_IMAGE:-ds4fv-vllm-28-sm12x:exl3-dev}
+# Run directly on the local Spark by default. Set SPARK_HOST to orchestrate a
+# Spark over SSH from another machine.
+spark_host=${SPARK_HOST:-local}
+image=${DS4FV_IMAGE:-ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.1}
 container_name=${CONTAINER_NAME:-ds4fv-exl3}
-hf_cache=${HF_CACHE:-/home/tj/.cache/huggingface}
+hf_cache=${HF_CACHE:-}
 model_repo=${MODEL_REPO:-}
 model_revision=${MODEL_REVISION:-}
 model_kind=${MODEL_KIND:-vision}
@@ -39,17 +40,44 @@ remote() {
   ssh -o BatchMode=yes "${host}" "${remote_command}"
 }
 
-if [[ "$(remote "${spark_host}" uname -m)" != aarch64 ]]; then
-  echo "${spark_host} is not an arm64 DGX Spark" >&2
+local_spark=0
+case "${spark_host}" in
+  local|localhost|127.0.0.1|::1) local_spark=1 ;;
+esac
+
+on_spark() {
+  if (( local_spark )); then
+    "$@"
+  else
+    remote "${spark_host}" "$@"
+  fi
+}
+
+if [[ -z "${hf_cache}" ]]; then
+  hf_cache=$(on_spark sh -c 'printf "%s" "${XDG_CACHE_HOME:-$HOME/.cache}/huggingface"')
+fi
+
+spark_label=${spark_host}
+if (( local_spark )); then
+  spark_label=$(hostname -s)
+fi
+
+if [[ "$(on_spark uname -m)" != aarch64 ]]; then
+  echo "${spark_label} is not an arm64 DGX Spark" >&2
   exit 64
 fi
+if ! on_spark command -v docker >/dev/null; then
+  echo "docker is not installed on ${spark_label}" >&2
+  exit 69
+fi
+on_spark mkdir -p "${hf_cache}"
 
-if remote "${spark_host}" docker container inspect "${container_name}" \
+if on_spark docker container inspect "${container_name}" \
   >/dev/null 2>&1; then
-  remote "${spark_host}" docker rm -f "${container_name}" >/dev/null
+  on_spark docker rm -f "${container_name}" >/dev/null
 fi
 
-remote "${spark_host}" docker run -d \
+on_spark docker run -d \
   --name "${container_name}" \
   --gpus all \
   --network host \
@@ -63,8 +91,8 @@ remote "${spark_host}" docker run -d \
   -e MODEL_KIND="${model_kind}" \
   -e EXL3_PROFILE="${exl3_profile}" \
   -e HF_HOME=/cache/huggingface \
-  -e HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}" \
-  -e TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-1}" \
+  -e HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-0}" \
+  -e TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-0}" \
   -e MODEL_REPO="${model_repo}" \
   -e MODEL_REVISION="${model_revision}" \
   -e MODEL_PATH="${MODEL_PATH:-}" \
@@ -98,6 +126,10 @@ remote "${spark_host}" docker run -d \
   -e ENABLE_PREFIX_CACHING="${ENABLE_PREFIX_CACHING:-1}" \
   "${image}" >/dev/null
 
-echo "Started ${spark_host}/${container_name}."
+echo "Started ${spark_label}/${container_name}."
 echo "Health stays starting until release warmup finishes."
-echo "Follow startup: ssh ${spark_host} docker logs -f ${container_name}"
+if (( local_spark )); then
+  echo "Follow startup: docker logs -f ${container_name}"
+else
+  echo "Follow startup: ssh ${spark_host} docker logs -f ${container_name}"
+fi
