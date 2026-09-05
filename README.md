@@ -1,3 +1,12 @@
+# ⚠️ NOT RECOMMENDED
+
+> [!WARNING]
+> This vLLM 0.28 recipe produced lower model quality than the MIA-derived
+> alternative. It is retained for reference and comparison, but is not the
+> recommended deployment. Use
+> **[tpurtell/ds4-mia-exl3-k2-1spark](https://github.com/tpurtell/ds4-mia-exl3-k2-1spark)**
+> instead.
+
 # DeepSeek V4 Flash/Vision on one DGX Spark
 
 This repository builds an **arm64-only, NVIDIA GB10 / SM121** vLLM image whose
