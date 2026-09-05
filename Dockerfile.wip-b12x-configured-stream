@@ -1,0 +1,18 @@
+FROM ds4fv-vllm-28-sm12x:b12x-stream-safe-wip23
+
+COPY patches/apply-vllm-b12x-configured-stream.py \
+     /tmp/apply-vllm-b12x-configured-stream.py
+RUN python3 /tmp/apply-vllm-b12x-configured-stream.py \
+      /usr/local/lib/python3.12/dist-packages/vllm \
+ && python3 -m py_compile \
+      /usr/local/lib/python3.12/dist-packages/vllm/model_executor/layers/fused_moe/runner/moe_runner.py \
+ && rm /tmp/apply-vllm-b12x-configured-stream.py
+
+RUN CUDA_VISIBLE_DEVICES='' python3 - <<'PY'
+import inspect
+from vllm.model_executor.layers.fused_moe.runner.moe_runner import MoERunner
+
+source = inspect.getsource(MoERunner._uses_b12x_moe_kernel.fget)
+assert 'getattr(kernel_config, "moe_backend", None) == "b12x"' in source
+print("Configured-backend B12x stream detection contract passed")
+PY

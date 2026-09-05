@@ -1,0 +1,14 @@
+FROM ds4fv-vllm-28-sm12x:tokenizer-threadsafe-wip22
+
+COPY patches/apply-vllm-b12x-shared-stream.py \
+     /tmp/apply-vllm-b12x-shared-stream.py
+RUN python3 /tmp/apply-vllm-b12x-shared-stream.py \
+      /usr/local/lib/python3.12/dist-packages/vllm \
+ && python3 -m py_compile \
+      /usr/local/lib/python3.12/dist-packages/vllm/model_executor/layers/fused_moe/runner/moe_runner.py \
+      /usr/local/lib/python3.12/dist-packages/vllm/model_executor/layers/fused_moe/runner/shared_experts.py \
+ && rm /tmp/apply-vllm-b12x-shared-stream.py
+
+COPY tests/spark_b12x_no_gpu_smoke.py \
+     /opt/ds4fv/tests/spark_b12x_no_gpu_smoke.py
+RUN CUDA_VISIBLE_DEVICES='' python3 /opt/ds4fv/tests/spark_b12x_no_gpu_smoke.py

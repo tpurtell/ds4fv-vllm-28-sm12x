@@ -1,0 +1,12 @@
+{
+  "schema": "ds4fv-release-suite-manifest.v1",
+  "started_utc": "2026-09-02T01:17:26.869503+00:00",
+  "role": "native-vision",
+  "base_url": "http://10.55.0.3:8000",
+  "model": "deepseek-v4-flash-vision-exp-native",
+  "image_id": "sha256:6cbdefb69edf00a568734c586541c7b59ce00acb393a6f2eb06a8132c877a8e8",
+  "recipe_commit": "a2673c7c211b357957d5801b3900ac44f745210b",
+  "dspark_tokens": 3,
+  "dspark_policy": "fixed",
+  "draft_sample_method": "greedy"
+}

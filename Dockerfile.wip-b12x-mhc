@@ -1,0 +1,9 @@
+ARG BASE_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:rc-6b94020
+FROM ${BASE_IMAGE}
+
+COPY patches/apply-vllm-b12x-mhc.py /tmp/apply-vllm-b12x-mhc.py
+RUN python3 /tmp/apply-vllm-b12x-mhc.py \
+      /usr/local/lib/python3.12/dist-packages/vllm \
+ && python3 -m py_compile \
+      /usr/local/lib/python3.12/dist-packages/vllm/models/deepseek_v4/nvidia/model.py \
+ && rm /tmp/apply-vllm-b12x-mhc.py

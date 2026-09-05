@@ -1,0 +1,12 @@
+{
+  "schema": "ds4fv-release-suite-manifest.v1",
+  "started_utc": "2026-09-02T06:36:26.825615+00:00",
+  "role": "exl3",
+  "base_url": "http://ostrich:8000",
+  "model": "deepseek-v4-flash-0731-exl3-k2.1-d2.2-v3",
+  "image_id": "sha256:30a36a686318cac499eee3a5894485ada20aaa5f4e2f63f55777e594b1726738",
+  "recipe_commit": "100b4f2e31e07309d1b4d4ba8c7ee160768dfbe6",
+  "dspark_tokens": 5,
+  "dspark_policy": "fixed",
+  "draft_sample_method": "greedy"
+}

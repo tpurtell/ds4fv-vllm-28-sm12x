@@ -1,0 +1,14 @@
+FROM ds4fv-vllm-28-sm12x:vision-layout-aware-wip21
+
+COPY patches/apply-vllm-dsv4-tokenizer-threadsafe.py \
+     /tmp/apply-vllm-dsv4-tokenizer-threadsafe.py
+RUN python3 /tmp/apply-vllm-dsv4-tokenizer-threadsafe.py \
+      /usr/local/lib/python3.12/dist-packages/vllm \
+ && python3 -m py_compile \
+      /usr/local/lib/python3.12/dist-packages/vllm/renderers/deepseek_v4.py \
+ && rm /tmp/apply-vllm-dsv4-tokenizer-threadsafe.py
+
+COPY tests/spark_dsv4_tokenizer_threadsafe_no_gpu.py \
+     /opt/ds4fv/tests/spark_dsv4_tokenizer_threadsafe_no_gpu.py
+RUN CUDA_VISIBLE_DEVICES='' \
+    python3 /opt/ds4fv/tests/spark_dsv4_tokenizer_threadsafe_no_gpu.py

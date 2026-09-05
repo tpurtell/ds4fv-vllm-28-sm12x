@@ -1,0 +1,7 @@
+FROM ds4fv-vllm-28-sm12x:dcp2-agrs-combine-wip13
+
+COPY scripts/start-native.sh /opt/ds4fv/bin/start-native
+RUN chmod 0755 /opt/ds4fv/bin/start-native \
+ && bash -n /opt/ds4fv/bin/start-native
+
+LABEL org.opencontainers.image.revision="6407692-dcp2-profile-wip14"

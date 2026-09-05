@@ -1,0 +1,12 @@
+{
+  "schema": "ds4fv-release-suite-manifest.v1",
+  "started_utc": "2026-09-02T04:55:12.216141+00:00",
+  "role": "exl3-vision",
+  "base_url": "http://dodo:8000",
+  "model": "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1",
+  "image_id": "sha256:f6d7280498d3586f37b0d9ad8436e9fd3d0509f065bc1fb61e3c95860ce68038",
+  "recipe_commit": "657dbd3c60f202ead7a254c884a242792d644683",
+  "dspark_tokens": 3,
+  "dspark_policy": "fixed",
+  "draft_sample_method": "greedy"
+}

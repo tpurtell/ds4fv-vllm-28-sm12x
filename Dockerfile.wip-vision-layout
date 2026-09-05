@@ -1,0 +1,8 @@
+FROM ds4fv-vllm-28-sm12x:dcp2-compressor-state-wip20
+
+COPY overlay/vllm/model_executor/models/deepseek_v4_vision.py \
+     /usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/deepseek_v4_vision.py
+RUN python3 -m py_compile \
+      /usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/deepseek_v4_vision.py
+
+LABEL org.opencontainers.image.revision="eeddefa-vision-layout-aware-wip21"

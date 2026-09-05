@@ -1,0 +1,13 @@
+FROM ds4fv-vllm-28-sm12x:dcp2-rank-scalar-wip15
+
+COPY patches/apply-vllm-dcp-rate-aware.py /tmp/apply-vllm-dcp-rate-aware.py
+COPY tests/spark_dcp_rate_aware_no_gpu_smoke.py \
+     /tmp/spark_dcp_rate_aware_no_gpu_smoke.py
+RUN python3 /tmp/apply-vllm-dcp-rate-aware.py \
+      /usr/local/lib/python3.12/dist-packages/vllm \
+ && python3 -m compileall -q /usr/local/lib/python3.12/dist-packages/vllm \
+ && CUDA_VISIBLE_DEVICES='' python3 /tmp/spark_dcp_rate_aware_no_gpu_smoke.py \
+ && rm /tmp/apply-vllm-dcp-rate-aware.py \
+       /tmp/spark_dcp_rate_aware_no_gpu_smoke.py
+
+LABEL org.opencontainers.image.revision="6407692-dcp2-rate-aware-draft-rank-wip19"

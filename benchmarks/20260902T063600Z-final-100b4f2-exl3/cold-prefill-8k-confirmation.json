@@ -1,0 +1,44 @@
+{
+  "schema": "ds4fv-prefill-depth.v1",
+  "method": "C1 exact-length unique prompts; client request to first streamed token; server tokenization and one-token handoff included; every depth is warmed independently and no earlier prefix can be reused",
+  "provenance": {
+    "role": "exl3",
+    "image_id": "sha256:30a36a686318cac499eee3a5894485ada20aaa5f4e2f63f55777e594b1726738",
+    "recipe_commit": "100b4f2e31e07309d1b4d4ba8c7ee160768dfbe6",
+    "model": "deepseek-v4-flash-0731-exl3-k2.1-d2.2-v3"
+  },
+  "runs_per_point": 3,
+  "points": [
+    {
+      "prompt_tokens": 8192,
+      "effective_prompt_tokens_per_second": {
+        "median": 1297.014833565519,
+        "min": 1271.20420757654,
+        "max": 1309.3916176192795
+      },
+      "ttft_seconds": {
+        "median": 6.316041874000803,
+        "min": 6.256340646883473,
+        "max": 6.4442832639906555
+      },
+      "runs": [
+        {
+          "prompt_tokens": 8192,
+          "ttft_seconds": 6.256340646883473,
+          "effective_prompt_tokens_per_second": 1309.3916176192795
+        },
+        {
+          "prompt_tokens": 8192,
+          "ttft_seconds": 6.316041874000803,
+          "effective_prompt_tokens_per_second": 1297.014833565519
+        },
+        {
+          "prompt_tokens": 8192,
+          "ttft_seconds": 6.4442832639906555,
+          "effective_prompt_tokens_per_second": 1271.20420757654
+        }
+      ]
+    }
+  ],
+  "passed": true
+}

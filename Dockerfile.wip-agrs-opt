@@ -1,0 +1,15 @@
+FROM ds4fv-vllm-28-sm12x:dcp2-attn-wip7
+
+ARG VLLM_SITE_PACKAGES=/usr/local/lib/python3.12/dist-packages
+
+COPY patches/apply-vllm-dcp-agrs-opt.py /tmp/apply-vllm-dcp-agrs-opt.py
+RUN python3 /tmp/apply-vllm-dcp-agrs-opt.py "${VLLM_SITE_PACKAGES}/vllm" \
+ && python3 -m compileall -q "${VLLM_SITE_PACKAGES}/vllm" \
+ && rm /tmp/apply-vllm-dcp-agrs-opt.py
+
+COPY tests/spark_dcp_agrs_combine_no_gpu_smoke.py \
+     /opt/ds4fv/tests/spark_dcp_agrs_combine_no_gpu_smoke.py
+RUN CUDA_VISIBLE_DEVICES="" \
+    python3 /opt/ds4fv/tests/spark_dcp_agrs_combine_no_gpu_smoke.py
+
+LABEL org.opencontainers.image.revision="6407692-dcp2-agrs-combine-wip13"

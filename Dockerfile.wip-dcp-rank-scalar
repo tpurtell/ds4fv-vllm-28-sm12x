@@ -1,0 +1,8 @@
+FROM ds4fv-vllm-28-sm12x:dcp2-profile-wip14
+
+COPY patches/apply-vllm-dcp-rank-scalar.py /tmp/apply-vllm-dcp-rank-scalar.py
+RUN python3 /tmp/apply-vllm-dcp-rank-scalar.py \
+      /usr/local/lib/python3.12/dist-packages/vllm \
+ && rm /tmp/apply-vllm-dcp-rank-scalar.py
+
+LABEL org.opencontainers.image.revision="6407692-dcp2-rank-scalar-wip15"

@@ -1,0 +1,1218 @@
+{
+  "capability": [
+    12,
+    1
+  ],
+  "device": "NVIDIA GB10",
+  "shapes": [
+    {
+      "b12x_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "b12x_scratch_bytes": 6400,
+      "b12x_vs_reference": {
+        "comb": {
+          "cosine": 1.0,
+          "exact_fraction": 0.3125,
+          "finite": true,
+          "max_abs": 5.960464477539063e-08,
+          "mean_abs": 1.6763806343078613e-08,
+          "rmse": 2.296423140535353e-08
+        },
+        "normalized_y": {
+          "cosine": 1.000000238418579,
+          "exact_fraction": 1.0,
+          "finite": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "rmse": 0.0
+        },
+        "post": {
+          "cosine": 1.0,
+          "exact_fraction": 1.0,
+          "finite": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "rmse": 0.0
+        },
+        "residual": {
+          "cosine": 1.0,
+          "exact_fraction": 0.99993896484375,
+          "finite": true,
+          "max_abs": 2.9802322387695312e-08,
+          "mean_abs": 1.8189894035458565e-12,
+          "rmse": 2.3283064365386963e-10
+        }
+      },
+      "seed": 91451,
+      "tilelang_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "tilelang_vs_b12x": {
+        "comb": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 3.510713577270508e-05,
+          "mean_abs": 1.4100223779678345e-05,
+          "rmse": 1.6756979675847106e-05
+        },
+        "normalized_y": {
+          "cosine": 0.9999994039535522,
+          "exact_fraction": 0.966064453125,
+          "finite": true,
+          "max_abs": 0.015625,
+          "mean_abs": 0.0001505482941865921,
+          "rmse": 0.0010953163728117943
+        },
+        "post": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.0002772808074951172,
+          "mean_abs": 0.00012905895709991455,
+          "rmse": 0.0001713592791929841
+        },
+        "residual": {
+          "cosine": 1.0,
+          "exact_fraction": 1.0,
+          "finite": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "rmse": 0.0
+        }
+      },
+      "tilelang_vs_reference": {
+        "comb": {
+          "cosine": 1.0,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 3.510713577270508e-05,
+          "mean_abs": 1.4107674360275269e-05,
+          "rmse": 1.676128158578649e-05
+        },
+        "normalized_y": {
+          "cosine": 0.9999994039535522,
+          "exact_fraction": 0.966064453125,
+          "finite": true,
+          "max_abs": 0.015625,
+          "mean_abs": 0.0001505482941865921,
+          "rmse": 0.0010953163728117943
+        },
+        "post": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.0002772808074951172,
+          "mean_abs": 0.00012905895709991455,
+          "rmse": 0.0001713592791929841
+        },
+        "residual": {
+          "cosine": 1.0,
+          "exact_fraction": 0.99993896484375,
+          "finite": true,
+          "max_abs": 2.9802322387695312e-08,
+          "mean_abs": 1.8189894035458565e-12,
+          "rmse": 2.3283064365386963e-10
+        }
+      },
+      "tokens": 1
+    },
+    {
+      "b12x_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "b12x_scratch_bytes": 19200,
+      "b12x_vs_reference": {
+        "comb": {
+          "cosine": 0.9999999403953552,
+          "exact_fraction": 0.125,
+          "finite": true,
+          "max_abs": 3.546476364135742e-06,
+          "mean_abs": 6.494423132608063e-07,
+          "rmse": 1.0375541705798241e-06
+        },
+        "normalized_y": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.998779296875,
+          "finite": true,
+          "max_abs": 0.015625,
+          "mean_abs": 3.980162546213251e-06,
+          "rmse": 0.00018521308084018528
+        },
+        "post": {
+          "cosine": 1.0,
+          "exact_fraction": 0.3333333432674408,
+          "finite": true,
+          "max_abs": 1.0371208190917969e-05,
+          "mean_abs": 2.776583187369397e-06,
+          "rmse": 4.2096594370377716e-06
+        },
+        "residual": {
+          "cosine": 1.0,
+          "exact_fraction": 0.99993896484375,
+          "finite": true,
+          "max_abs": 0.00390625,
+          "mean_abs": 9.93459252640605e-08,
+          "rmse": 1.8161592379328795e-05
+        }
+      },
+      "seed": 91453,
+      "tilelang_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "tilelang_vs_b12x": {
+        "comb": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 8.96453857421875e-05,
+          "mean_abs": 3.410751742194407e-05,
+          "rmse": 4.171665568719618e-05
+        },
+        "normalized_y": {
+          "cosine": 0.9999977946281433,
+          "exact_fraction": 0.8536784052848816,
+          "finite": true,
+          "max_abs": 0.03125,
+          "mean_abs": 0.0006080076564103365,
+          "rmse": 0.002112962305545807
+        },
+        "post": {
+          "cosine": 0.9999999403953552,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.00017511844635009766,
+          "mean_abs": 0.0001105169503716752,
+          "rmse": 0.00011840290972031653
+        },
+        "residual": {
+          "cosine": 1.0,
+          "exact_fraction": 1.0,
+          "finite": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "rmse": 0.0
+        }
+      },
+      "tilelang_vs_reference": {
+        "comb": {
+          "cosine": 1.0,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 8.609890937805176e-05,
+          "mean_abs": 3.4125521779060364e-05,
+          "rmse": 4.15796966990456e-05
+        },
+        "normalized_y": {
+          "cosine": 0.9999977946281433,
+          "exact_fraction": 0.8528646230697632,
+          "finite": true,
+          "max_abs": 0.03125,
+          "mean_abs": 0.0006107162917032838,
+          "rmse": 0.0021163756027817726
+        },
+        "post": {
+          "cosine": 1.0,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.00016891956329345703,
+          "mean_abs": 0.00010917087638517842,
+          "rmse": 0.00011710428952937946
+        },
+        "residual": {
+          "cosine": 1.0,
+          "exact_fraction": 0.99993896484375,
+          "finite": true,
+          "max_abs": 0.00390625,
+          "mean_abs": 9.93459252640605e-08,
+          "rmse": 1.8161592379328795e-05
+        }
+      },
+      "tokens": 3
+    },
+    {
+      "b12x_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "b12x_scratch_bytes": 51200,
+      "b12x_vs_reference": {
+        "comb": {
+          "cosine": 1.0,
+          "exact_fraction": 0.2265625,
+          "finite": true,
+          "max_abs": 1.1920928955078125e-07,
+          "mean_abs": 2.601882442831993e-08,
+          "rmse": 3.4047452857066673e-08
+        },
+        "normalized_y": {
+          "cosine": 1.0,
+          "exact_fraction": 0.999969482421875,
+          "finite": true,
+          "max_abs": 0.0078125,
+          "mean_abs": 2.384185791015625e-07,
+          "rmse": 4.31583721365314e-05
+        },
+        "post": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.3125,
+          "finite": true,
+          "max_abs": 2.384185791015625e-07,
+          "mean_abs": 8.009374141693115e-08,
+          "rmse": 1.0563021390908034e-07
+        },
+        "residual": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.999969482421875,
+          "finite": true,
+          "max_abs": 1.52587890625e-05,
+          "mean_abs": 1.418811734765768e-10,
+          "rmse": 4.257682562069931e-08
+        }
+      },
+      "seed": 91458,
+      "tilelang_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "tilelang_vs_b12x": {
+        "comb": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.0003260970115661621,
+          "mean_abs": 9.674613829702139e-05,
+          "rmse": 0.00012170601257821545
+        },
+        "normalized_y": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.99493408203125,
+          "finite": true,
+          "max_abs": 0.015625,
+          "mean_abs": 1.899943163152784e-05,
+          "rmse": 0.0004082196101080626
+        },
+        "post": {
+          "cosine": 0.9999997615814209,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.0024455785751342773,
+          "mean_abs": 0.0004922747611999512,
+          "rmse": 0.0007368233636952937
+        },
+        "residual": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 1.0,
+          "finite": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "rmse": 0.0
+        }
+      },
+      "tilelang_vs_reference": {
+        "comb": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.0003260970115661621,
+          "mean_abs": 9.674596367403865e-05,
+          "rmse": 0.00012170113768661395
+        },
+        "normalized_y": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.994903564453125,
+          "finite": true,
+          "max_abs": 0.015625,
+          "mean_abs": 1.9237850210629404e-05,
+          "rmse": 0.00041049468563869596
+        },
+        "post": {
+          "cosine": 0.9999997615814209,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.0024457573890686035,
+          "mean_abs": 0.0004922728985548019,
+          "rmse": 0.0007368209771811962
+        },
+        "residual": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.999969482421875,
+          "finite": true,
+          "max_abs": 1.52587890625e-05,
+          "mean_abs": 1.418811734765768e-10,
+          "rmse": 4.257682562069931e-08
+        }
+      },
+      "tokens": 8
+    },
+    {
+      "b12x_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "b12x_scratch_bytes": 102400,
+      "b12x_vs_reference": {
+        "comb": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.234375,
+          "finite": true,
+          "max_abs": 7.3909759521484375e-06,
+          "mean_abs": 2.0139850676059723e-07,
+          "rmse": 8.425134296885517e-07
+        },
+        "normalized_y": {
+          "cosine": 1.0,
+          "exact_fraction": 0.999755859375,
+          "finite": true,
+          "max_abs": 0.0078125,
+          "mean_abs": 6.343798304442316e-07,
+          "rmse": 5.6356129789492115e-05
+        },
+        "post": {
+          "cosine": 1.0,
+          "exact_fraction": 0.796875,
+          "finite": true,
+          "max_abs": 4.0531158447265625e-06,
+          "mean_abs": 1.341104507446289e-07,
+          "rmse": 5.823857236464391e-07
+        },
+        "residual": {
+          "cosine": 1.0,
+          "exact_fraction": 0.999969482421875,
+          "finite": true,
+          "max_abs": 0.001953125,
+          "mean_abs": 8.04584487923421e-09,
+          "rmse": 3.82260759579367e-06
+        }
+      },
+      "seed": 91466,
+      "tilelang_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "tilelang_vs_b12x": {
+        "comb": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.0002942979335784912,
+          "mean_abs": 7.688868208788335e-05,
+          "rmse": 9.558563033351675e-05
+        },
+        "normalized_y": {
+          "cosine": 0.999998152256012,
+          "exact_fraction": 0.8629608154296875,
+          "finite": true,
+          "max_abs": 0.03125,
+          "mean_abs": 0.0005550435744225979,
+          "rmse": 0.0020405410323292017
+        },
+        "post": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.00020813941955566406,
+          "mean_abs": 5.918554961681366e-05,
+          "rmse": 7.338485738728195e-05
+        },
+        "residual": {
+          "cosine": 0.9999999403953552,
+          "exact_fraction": 1.0,
+          "finite": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "rmse": 0.0
+        }
+      },
+      "tilelang_vs_reference": {
+        "comb": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.0002942979335784912,
+          "mean_abs": 7.682267460040748e-05,
+          "rmse": 9.553340350976214e-05
+        },
+        "normalized_y": {
+          "cosine": 0.999998152256012,
+          "exact_fraction": 0.8630828857421875,
+          "finite": true,
+          "max_abs": 0.03125,
+          "mean_abs": 0.0005545581225305796,
+          "rmse": 0.0020398839842528105
+        },
+        "post": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.00020813941955566406,
+          "mean_abs": 5.911290645599365e-05,
+          "rmse": 7.333607936743647e-05
+        },
+        "residual": {
+          "cosine": 1.0,
+          "exact_fraction": 0.999969482421875,
+          "finite": true,
+          "max_abs": 0.001953125,
+          "mean_abs": 8.04584487923421e-09,
+          "rmse": 3.82260759579367e-06
+        }
+      },
+      "tokens": 16
+    },
+    {
+      "b12x_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "b12x_scratch_bytes": 108800,
+      "b12x_vs_reference": {
+        "comb": {
+          "cosine": 1.0,
+          "exact_fraction": 0.08088235557079315,
+          "finite": true,
+          "max_abs": 1.5944242477416992e-05,
+          "mean_abs": 4.6615090809609683e-07,
+          "rmse": 1.8399584860162577e-06
+        },
+        "normalized_y": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.9994973540306091,
+          "finite": true,
+          "max_abs": 0.015625,
+          "mean_abs": 7.150694614210806e-07,
+          "rmse": 7.666625606361777e-05
+        },
+        "post": {
+          "cosine": 1.0,
+          "exact_fraction": 0.47058823704719543,
+          "finite": true,
+          "max_abs": 8.940696716308594e-06,
+          "mean_abs": 3.2519594128643803e-07,
+          "rmse": 1.193997832160676e-06
+        },
+        "residual": {
+          "cosine": 0.9999999403953552,
+          "exact_fraction": 0.9999569058418274,
+          "finite": true,
+          "max_abs": 0.001953125,
+          "mean_abs": 9.395855649074747e-09,
+          "rmse": 3.7480597256944748e-06
+        }
+      },
+      "seed": 91467,
+      "tilelang_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "tilelang_vs_b12x": {
+        "comb": {
+          "cosine": 1.0,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.00010442733764648438,
+          "mean_abs": 2.306894566572737e-05,
+          "rmse": 3.094776548095979e-05
+        },
+        "normalized_y": {
+          "cosine": 0.9999997615814209,
+          "exact_fraction": 0.9751120209693909,
+          "finite": true,
+          "max_abs": 0.03125,
+          "mean_abs": 7.229538459796458e-05,
+          "rmse": 0.0007297553238458931
+        },
+        "post": {
+          "cosine": 1.0,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 6.341934204101562e-05,
+          "mean_abs": 2.509530895622447e-05,
+          "rmse": 2.9420722057693638e-05
+        },
+        "residual": {
+          "cosine": 0.9999999403953552,
+          "exact_fraction": 1.0,
+          "finite": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "rmse": 0.0
+        }
+      },
+      "tilelang_vs_reference": {
+        "comb": {
+          "cosine": 0.9999999403953552,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.00010448694229125977,
+          "mean_abs": 2.309265073563438e-05,
+          "rmse": 3.0878345569362864e-05
+        },
+        "normalized_y": {
+          "cosine": 0.9999996423721313,
+          "exact_fraction": 0.9748678803443909,
+          "finite": true,
+          "max_abs": 0.03125,
+          "mean_abs": 7.291008660104126e-05,
+          "rmse": 0.0007336733979173005
+        },
+        "post": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 6.318092346191406e-05,
+          "mean_abs": 2.4884062440833077e-05,
+          "rmse": 2.9316646759980358e-05
+        },
+        "residual": {
+          "cosine": 0.9999999403953552,
+          "exact_fraction": 0.9999569058418274,
+          "finite": true,
+          "max_abs": 0.001953125,
+          "mean_abs": 9.395855649074747e-09,
+          "rmse": 3.7480597256944748e-06
+        }
+      },
+      "tokens": 17
+    },
+    {
+      "b12x_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "b12x_scratch_bytes": 211200,
+      "b12x_vs_reference": {
+        "comb": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.27462121844291687,
+          "finite": true,
+          "max_abs": 2.8014183044433594e-06,
+          "mean_abs": 9.874841566670511e-08,
+          "rmse": 2.959750418085605e-07
+        },
+        "normalized_y": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.9996967315673828,
+          "finite": true,
+          "max_abs": 0.0078125,
+          "mean_abs": 4.5070547116665693e-07,
+          "rmse": 5.145464820088819e-05
+        },
+        "post": {
+          "cosine": 0.9999999403953552,
+          "exact_fraction": 0.21969696879386902,
+          "finite": true,
+          "max_abs": 4.3392181396484375e-05,
+          "mean_abs": 2.5505539724690607e-06,
+          "rmse": 7.912132787168957e-06
+        },
+        "residual": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.9999611973762512,
+          "finite": true,
+          "max_abs": 0.00390625,
+          "mean_abs": 1.6370092836837102e-08,
+          "rmse": 6.278035925788572e-06
+        }
+      },
+      "seed": 91483,
+      "tilelang_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "tilelang_vs_b12x": {
+        "comb": {
+          "cosine": 1.0,
+          "exact_fraction": 0.0018939394503831863,
+          "finite": true,
+          "max_abs": 1.4394521713256836e-05,
+          "mean_abs": 3.176459131282172e-06,
+          "rmse": 4.082789018866606e-06
+        },
+        "normalized_y": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.9888065457344055,
+          "finite": true,
+          "max_abs": 0.03125,
+          "mean_abs": 3.640823706518859e-05,
+          "rmse": 0.0005295645096339285
+        },
+        "post": {
+          "cosine": 1.0,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.0003681778907775879,
+          "mean_abs": 9.31901449803263e-05,
+          "rmse": 0.0001244066806975752
+        },
+        "residual": {
+          "cosine": 1.0,
+          "exact_fraction": 1.0,
+          "finite": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "rmse": 0.0
+        }
+      },
+      "tilelang_vs_reference": {
+        "comb": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.0018939394503831863,
+          "finite": true,
+          "max_abs": 1.5676021575927734e-05,
+          "mean_abs": 3.1784629754838534e-06,
+          "rmse": 4.093739335075952e-06
+        },
+        "normalized_y": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.9888065457344055,
+          "finite": true,
+          "max_abs": 0.03125,
+          "mean_abs": 3.6361620004754514e-05,
+          "rmse": 0.0005292656715027988
+        },
+        "post": {
+          "cosine": 1.0,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.0003680586814880371,
+          "mean_abs": 9.417619003215805e-05,
+          "rmse": 0.00012527540093287826
+        },
+        "residual": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.9999611973762512,
+          "finite": true,
+          "max_abs": 0.00390625,
+          "mean_abs": 1.6370092836837102e-08,
+          "rmse": 6.278035925788572e-06
+        }
+      },
+      "tokens": 33
+    },
+    {
+      "b12x_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "b12x_scratch_bytes": 614400,
+      "b12x_vs_reference": {
+        "comb": {
+          "cosine": 1.0,
+          "exact_fraction": 0.2669270932674408,
+          "finite": true,
+          "max_abs": 4.380941390991211e-06,
+          "mean_abs": 9.588742244659443e-08,
+          "rmse": 3.3466633908574295e-07
+        },
+        "normalized_y": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.9999440908432007,
+          "finite": true,
+          "max_abs": 0.015625,
+          "mean_abs": 1.975641197304867e-07,
+          "rmse": 4.002785499324091e-05
+        },
+        "post": {
+          "cosine": 1.0,
+          "exact_fraction": 0.5546875,
+          "finite": true,
+          "max_abs": 1.1682510375976562e-05,
+          "mean_abs": 3.25031578540802e-07,
+          "rmse": 1.2368861916911555e-06
+        },
+        "residual": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.9999510645866394,
+          "finite": true,
+          "max_abs": 0.001953125,
+          "mean_abs": 8.455887545721907e-09,
+          "rmse": 3.4147874430345837e-06
+        }
+      },
+      "seed": 91546,
+      "tilelang_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "tilelang_vs_b12x": {
+        "comb": {
+          "cosine": 1.0,
+          "exact_fraction": 0.0006510416860692203,
+          "finite": true,
+          "max_abs": 2.199411392211914e-05,
+          "mean_abs": 4.628168881026795e-06,
+          "rmse": 5.821539616590599e-06
+        },
+        "normalized_y": {
+          "cosine": 0.9999999403953552,
+          "exact_fraction": 0.9992116689682007,
+          "finite": true,
+          "max_abs": 0.015625,
+          "mean_abs": 2.5657536752987653e-06,
+          "rmse": 0.00013629710883833468
+        },
+        "post": {
+          "cosine": 0.9999999403953552,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 8.106231689453125e-05,
+          "mean_abs": 1.9320597857586108e-05,
+          "rmse": 2.4311108063557185e-05
+        },
+        "residual": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 1.0,
+          "finite": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "rmse": 0.0
+        }
+      },
+      "tilelang_vs_reference": {
+        "comb": {
+          "cosine": 1.0,
+          "exact_fraction": 0.0013020833721384406,
+          "finite": true,
+          "max_abs": 2.1964311599731445e-05,
+          "mean_abs": 4.638975951820612e-06,
+          "rmse": 5.838997822138481e-06
+        },
+        "normalized_y": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.9991964101791382,
+          "finite": true,
+          "max_abs": 0.015625,
+          "mean_abs": 2.534794475650415e-06,
+          "rmse": 0.00013382462202571332
+        },
+        "post": {
+          "cosine": 1.0,
+          "exact_fraction": 0.0026041667442768812,
+          "finite": true,
+          "max_abs": 8.106231689453125e-05,
+          "mean_abs": 1.921970397233963e-05,
+          "rmse": 2.4252087314380333e-05
+        },
+        "residual": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.9999510645866394,
+          "finite": true,
+          "max_abs": 0.001953125,
+          "mean_abs": 8.455887545721907e-09,
+          "rmse": 3.4147874430345837e-06
+        }
+      },
+      "tokens": 96
+    },
+    {
+      "b12x_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "b12x_scratch_bytes": 2457600,
+      "b12x_vs_reference": {
+        "comb": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.00016276042151730508,
+          "finite": true,
+          "max_abs": 0.0002639889717102051,
+          "mean_abs": 5.0044785893987864e-05,
+          "rmse": 6.34295865893364e-05
+        },
+        "normalized_y": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.9961986541748047,
+          "finite": true,
+          "max_abs": 0.015625,
+          "mean_abs": 9.902703823172487e-06,
+          "rmse": 0.0002736984461080283
+        },
+        "post": {
+          "cosine": 0.9999999403953552,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.00028008222579956055,
+          "mean_abs": 7.595822535222396e-05,
+          "rmse": 9.250680886907503e-05
+        },
+        "residual": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.9999510645866394,
+          "finite": true,
+          "max_abs": 0.00390625,
+          "mean_abs": 1.2450229291971482e-08,
+          "rmse": 4.869420990871731e-06
+        }
+      },
+      "seed": 91834,
+      "tilelang_repeat": {
+        "comb": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "normalized_y": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "post": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        },
+        "residual": {
+          "exact": true,
+          "finite": true,
+          "max_abs": 0.0
+        }
+      },
+      "tilelang_vs_b12x": {
+        "comb": {
+          "cosine": 1.0,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.0003731846809387207,
+          "mean_abs": 6.420555291697383e-05,
+          "rmse": 8.313163561979309e-05
+        },
+        "normalized_y": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.9953543543815613,
+          "finite": true,
+          "max_abs": 0.015625,
+          "mean_abs": 1.2389013136271387e-05,
+          "rmse": 0.0003063099575228989
+        },
+        "post": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.0,
+          "finite": true,
+          "max_abs": 0.0003815293312072754,
+          "mean_abs": 9.325891733169556e-05,
+          "rmse": 0.0001143151821452193
+        },
+        "residual": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 1.0,
+          "finite": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "rmse": 0.0
+        }
+      },
+      "tilelang_vs_reference": {
+        "comb": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.00016276042151730508,
+          "finite": true,
+          "max_abs": 0.00020049512386322021,
+          "mean_abs": 2.944710104202386e-05,
+          "rmse": 3.961461334256455e-05
+        },
+        "normalized_y": {
+          "cosine": 1.0000001192092896,
+          "exact_fraction": 0.9980278015136719,
+          "finite": true,
+          "max_abs": 0.015625,
+          "mean_abs": 4.779812115884852e-06,
+          "rmse": 0.00018618522153701633
+        },
+        "post": {
+          "cosine": 1.0,
+          "exact_fraction": 0.001953125,
+          "finite": true,
+          "max_abs": 0.00016200542449951172,
+          "mean_abs": 3.8208148907870054e-05,
+          "rmse": 4.797027577296831e-05
+        },
+        "residual": {
+          "cosine": 0.9999998807907104,
+          "exact_fraction": 0.9999510645866394,
+          "finite": true,
+          "max_abs": 0.00390625,
+          "mean_abs": 1.2450229291971482e-08,
+          "rmse": 4.869420990871731e-06
+        }
+      },
+      "tokens": 384
+    }
+  ],
+  "torch": "2.13.0+cu130"
+}
