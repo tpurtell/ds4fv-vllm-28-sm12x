@@ -1,0 +1,118 @@
+{
+  "schema": "deepseek-v4-flash-native-vision.v2",
+  "model": "deepseek-v4-flash-vision-exp-native",
+  "image_id": "sha256:d8a8d361adc3b81b7939fc487c97baa84e520201f1a31269b2dc0f100d94c3ee",
+  "recipe_commit": "6b940202b5ac9d38bb1af198c183f1ada513442a",
+  "supported_image_counts": {
+    "1": {
+      "passed": true,
+      "status": 200,
+      "expected": [
+        1
+      ],
+      "observed": [
+        1
+      ],
+      "response": "1",
+      "usage": {
+        "prompt_tokens": 184,
+        "total_tokens": 186,
+        "completion_tokens": 2,
+        "prompt_tokens_details": null,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    "4": {
+      "passed": true,
+      "status": 200,
+      "expected": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "observed": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "response": "1,2,3,4",
+      "usage": {
+        "prompt_tokens": 631,
+        "total_tokens": 639,
+        "completion_tokens": 8,
+        "prompt_tokens_details": null,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    "16": {
+      "passed": true,
+      "status": 200,
+      "expected": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "observed": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "response": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16",
+      "usage": {
+        "prompt_tokens": 2419,
+        "total_tokens": 2451,
+        "completion_tokens": 32,
+        "prompt_tokens_details": null,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    }
+  },
+  "over_limit_rejection": {
+    "passed": true,
+    "status": 400,
+    "expected_limit": 16,
+    "response": {
+      "error": {
+        "message": "At most 16 image(s) may be provided in one prompt. (parameter=image)",
+        "type": "BadRequestError",
+        "param": "image",
+        "code": 400
+      }
+    }
+  },
+  "passed": true
+}

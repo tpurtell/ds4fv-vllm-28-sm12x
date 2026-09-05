@@ -4,6 +4,48 @@ Each entry describes one major adaptation in one or two sentences. A path is
 not called qualified until its Spark-side correctness and performance evidence
 is retained in this repository.
 
+## 2026-09-03
+
+- **Post-0.28 DeepSeek RoPE correctness:** vLLM #54815 is backported so sparse
+  SWA/main layers construct their unscaled theta-10000 RoPE independently from
+  the compressor layers' theta-160000 YaRN configuration. The transform
+  understands nested and legacy checkpoint forms, copies rather than mutates
+  the shared config, and fails closed if the pinned 0.28 source no longer
+  matches. Because this changes model numerics, every v0.1.1 release profile is
+  requalified rather than inheriting v0.1.0 measurements.
+
+- **Post-0.28 router and temporary ownership:** vLLM #54048 keeps the DeepSeek
+  router GEMM output FP32 on SM121, matching the precision required by the
+  subsequent routing math. The Python side of #52836 removes the model-wide
+  eager scratch pool and returns allocation ownership to Torch for attention,
+  indexer, and compressor temporaries; the already-built non-`_out` wheel
+  operators remain usable without rebuilding vLLM's extension.
+
+- **Post-0.28 agent and DCP fixes:** The release includes #54838's implicit
+  DSML parameter close, #48922's malformed historical tool-argument recovery,
+  and #51262's valid transition after a trailing system message. The relevant
+  #51031 logical-versus-kernel block-size slot mapping and #54277 cache-group
+  consistency invariant are adapted to the recipe's rate-aware DCP path.
+
+- **InstantTensor boundary workaround:** Both one- and two-Spark launchers
+  explicitly select the buffered InstantTensor loader at I/O depth 128. This
+  bypasses the direct-I/O alignment/boundary failure seen in the large EXL3
+  files while retaining parallel staged reads and leaving the published model
+  payloads unchanged.
+
+- **FP8 three-checkpoint evidence matrix:** v0.1.1 measures official Vision on
+  two Sparks with TP2+DCP1, pure-K2 Vision EXL3 on one Spark, and K2.2/D2
+  Vision EXL3 on one Spark. All three use FP8 KV, APC, a 500K request limit,
+  and fixed greedy DSpark K3; K2.2/D2 passed the complete gate, while the two
+  comparison checkpoints retain their strict prompt-fidelity misses in the
+  published receipts. NVFP4 remains opt-in but is intentionally outside this
+  numerics-reset release matrix.
+
+- **Post-release xgrammar follow-up:** vLLM #53046's validation of the first
+  post-reasoning speculative token is present in repository `main`, but landed
+  after the immutable v0.1.1 image was built. It is not included in v0.1.1's
+  image or qualification claims.
+
 ## 2026-09-01
 
 - **Spark-only target:** The image is hard-pinned to `linux/arm64` and GB10's
@@ -206,7 +248,7 @@ is retained in this repository.
 - **Release API contracts:** Both launch roles explicitly enable the native
   DeepSeek V4 tokenizer, reasoning parser, and automatic tool parser; Vision
   also enforces the qualified 16-image ceiling. vLLM's merged termination-safe
-  xgrammar token-batch fix is backported so speculative decoding stops grammar
+  xgrammar fix #52805 is backported so speculative decoding stops grammar
   advancement at a structured-output stop token. The frozen-image suite checks
   exact tool arguments plus 1/4/16-image ordering and image-17 rejection.
 

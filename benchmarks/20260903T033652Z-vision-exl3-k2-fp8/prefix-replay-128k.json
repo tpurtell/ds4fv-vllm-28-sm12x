@@ -1,0 +1,79 @@
+{
+  "schema": "ds4fv-prefix-replay.v1",
+  "passed": true,
+  "provenance": {
+    "role": "exl3-vision",
+    "image_id": "sha256:d8a8d361adc3b81b7939fc487c97baa84e520201f1a31269b2dc0f100d94c3ee",
+    "recipe_commit": "6b940202b5ac9d38bb1af198c183f1ada513442a",
+    "model": "deepseek-v4-flash-vision-exp-exl3-k2-v1"
+  },
+  "target_prompt_tokens": 128000,
+  "cache_salt": "a5a729705f374b79845fb340a54bc6b8",
+  "placements": [
+    {
+      "fraction": 0.05,
+      "key": "CINDER-05",
+      "value": "azurite-4831",
+      "token_offset_before_record": 6400
+    },
+    {
+      "fraction": 0.25,
+      "key": "JUNIPER-25",
+      "value": "topaz-7614",
+      "token_offset_before_record": 32000
+    },
+    {
+      "fraction": 0.5,
+      "key": "LANTERN-50",
+      "value": "cobalt-2097",
+      "token_offset_before_record": 64000
+    },
+    {
+      "fraction": 0.75,
+      "key": "MARBLE-75",
+      "value": "saffron-6382",
+      "token_offset_before_record": 96000
+    },
+    {
+      "fraction": 0.95,
+      "key": "ORBIT-95",
+      "value": "willow-1459",
+      "token_offset_before_record": 121600
+    },
+    {
+      "fraction": 0.99,
+      "key": "QUARTZ-99",
+      "value": "indigo-8726",
+      "token_offset_before_record": 126720
+    }
+  ],
+  "prefix_cache_hits_before": 807680.0,
+  "prefix_cache_hits_after": 935424.0,
+  "prefix_cache_hit_delta": 127744.0,
+  "passes": [
+    {
+      "pass": 1,
+      "passed": true,
+      "ttft_seconds": 104.75286372681148,
+      "request_seconds": 107.30548487883061,
+      "usage": {
+        "prompt_tokens": 128000,
+        "total_tokens": 128088,
+        "completion_tokens": 88
+      },
+      "output": "CINDER-05=azurite-4831\nJUNIPER-25=topaz-7614\nLANTERN-50=cobalt-2097\nMARBLE-75=saffron-6382\nORBIT-95=willow-1459\nQUARTZ-99=indigo-8726\n</p>\n</details>\n<|end|>\n<|The End|>"
+    },
+    {
+      "pass": 2,
+      "passed": true,
+      "ttft_seconds": 0.7739478189032525,
+      "request_seconds": 3.8766375379636884,
+      "usage": {
+        "prompt_tokens": 128000,
+        "total_tokens": 128128,
+        "completion_tokens": 128
+      },
+      "output": "CINDER-05=azurite-4831\nJUNIPER-25=topaz-7614\nLANTERN-50=cobalt-2097\nMARBLE-75=saffron-6382\nORBIT-95=willow-1459\nQUARTZ-99=indigo-8726\n</answer>\n</section>\n\n</section>\n\n</section>\n\n</section>\n\n</section>\n\n</section>\n\n</section>\n\n</section>\n\n</section>\n\n</section>\n\n</section>\n\n</section>\n\n</section>\n\n</section>\n\n</section>\n\n</section>\n\n</section>\n\n</section>\n\n</"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+2026-09-03T04:28:47.287125239Z 2026-09-03 04:28:47,286	INFO scripts.py:1094 -- [37mLocal node IP[39m: [1m10.55.0.4[22m
+2026-09-03T04:28:47.386650456Z [2026-09-03 04:28:47,386 W 1 1] global_state_accessor.cc:435: Retrying to get node with node ID a9f030d60e18141a876bcbc91bb43b8f6ecb64bb131a407b0488a1df
+2026-09-03T04:28:48.391651443Z 2026-09-03 04:28:48,391	SUCC scripts.py:1110 -- [32m--------------------[39m
+2026-09-03T04:28:48.391668211Z 2026-09-03 04:28:48,391	SUCC scripts.py:1111 -- [32mRay runtime started.[39m
+2026-09-03T04:28:48.391669763Z 2026-09-03 04:28:48,391	SUCC scripts.py:1112 -- [32m--------------------[39m
+2026-09-03T04:28:48.391670867Z 2026-09-03 04:28:48,391	INFO scripts.py:1114 -- To terminate the Ray runtime, run
+2026-09-03T04:28:48.391671891Z 2026-09-03 04:28:48,391	INFO scripts.py:1115 -- [1m  ray stop[22m
+2026-09-03T04:28:48.391800501Z 2026-09-03 04:28:48,391	INFO scripts.py:1123 -- [36m[1m--block[22m[39m
+2026-09-03T04:28:48.391814437Z 2026-09-03 04:28:48,391	INFO scripts.py:1124 -- This command will now block forever until terminated by a signal.
+2026-09-03T04:28:48.391817365Z 2026-09-03 04:28:48,391	INFO scripts.py:1127 -- Running subprocesses are monitored and a message will be printed if any of them terminate unexpectedly. Subprocesses exit with SIGTERM will be treated as graceful, thus NOT reported.

@@ -1,0 +1,39 @@
+{
+  "schema": "ds4fv-release-suite-manifest.v1",
+  "started_utc": "2026-09-03T03:37:19.787072+00:00",
+  "role": "exl3-vision",
+  "qualification_profile": "vision-exl3-k2-fp8",
+  "base_url": "http://ostrich:8000",
+  "model": "deepseek-v4-flash-vision-exp-exl3-k2-v1",
+  "image_id": "sha256:d8a8d361adc3b81b7939fc487c97baa84e520201f1a31269b2dc0f100d94c3ee",
+  "recipe_commit": "6b940202b5ac9d38bb1af198c183f1ada513442a",
+  "dspark_tokens": 3,
+  "dspark_policy": "fixed",
+  "draft_sample_method": "greedy",
+  "content_contract_floor": 38,
+  "kv_cache_dtype": "fp8",
+  "tool_eval_bench": {
+    "artifact": "tool-eval-bench.json",
+    "version": "2.3.2.dev3+g5df1e9e0c",
+    "run_id": "2026-09-03T04-29-51.246630Z_b84f944b",
+    "scenario_count": 69,
+    "points": 112,
+    "max_points": 138,
+    "normalized_score": 81,
+    "rating": "★★★★ Good",
+    "pass_count": 51,
+    "partial_count": 10,
+    "fail_count": 8,
+    "status": "completed"
+  },
+  "completed_utc": "2026-09-03T04:48:07Z",
+  "passed": false,
+  "failed_gates": [
+    "content semantic contracts: 34/40, below the 38/40 release floor",
+    "changed-image Vision fidelity: observed 5,5,7,8 instead of 5,6,7,8"
+  ],
+  "notes": [
+    "Exact-image Vision replay recorded 512 cache-hit tokens and changed images recorded zero additional hits; the failed changed-image check is model fidelity, not a prefix-cache collision.",
+    "The canonical tool score uses the exact clean evaluator version above. The separately retained dirty-throughput-only run is not release evidence."
+  ]
+}

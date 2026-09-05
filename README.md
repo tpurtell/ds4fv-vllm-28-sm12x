@@ -21,26 +21,27 @@ a 500K maximum model length, prefix caching, and fixed greedy K3 drafting:
 
 ```bash
 SPARK_HOST=kiwi \
-DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.0 \
+DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.1 \
 scripts/launch-one-spark-exl3.sh
 ```
 
-The launcher defaults to `dodo` when `SPARK_HOST` is omitted. To use the
-qualified higher-capacity NVFP4 DS-MLA cache:
+The launcher defaults to `dodo` when `SPARK_HOST` is omitted. The pure-K2
+Vision checkpoint is also available as the measured one-Spark quantization
+comparison:
 
 ```bash
 SPARK_HOST=kiwi \
-DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.0 \
-KV_CACHE_DTYPE=nvfp4_ds_mla \
+DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.1 \
+EXL3_PROFILE=k2 \
 scripts/launch-one-spark-exl3.sh
 ```
 
 The older text K2.1 checkpoint remains available with `MODEL_KIND=text`, but
 it is not part of the final performance/quality evidence matrix. Any compatible
 profile may opt into NVFP4; the backend fails closed when the required
-DeepSeek-V4/B12x path is unavailable. FP8 is the qualified production default,
-and NVFP4 is the qualified higher-capacity option for the primary Vision EXL3
-model.
+DeepSeek-V4/B12x path is unavailable. FP8 is the only KV-cache format in the
+v0.1.1 qualification matrix; NVFP4 remains an experimental user-selectable
+option rather than a v0.1.1 capacity, quality, or performance claim.
 
 ## Safety boundary
 
@@ -59,9 +60,30 @@ source-only checks that do not import vLLM or initialize CUDA.
 | B12x | `tpurtell/sparkinfer-glmrt@3fc8d1491d1313c0ca64b2b95772972b7f42ee9d` |
 | Native comparison checkpoint | `deepseek-ai/DeepSeek-V4-Flash-0731@9e165c30e2704aec5d9d593cce3eebd58bbef1cb` |
 | Native Vision comparison checkpoint | `deepseek-ai/DeepSeek-V4-Flash-Vision-Exp@86f746b36186f0e567729a5c06a8c918caba82a9` |
+| Pure-K2 Vision EXL3 checkpoint | `wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2-v1@419697c409cb4157471bcaf68be07dbd151b0a40` |
+| K2.2/D2 Vision EXL3 checkpoint | `wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1@8aab722f04f7e8963af83de5acb16138474e0228` |
 
 See [PROVENANCE.md](PROVENANCE.md) for package and checkpoint details and
 [TUNING.md](TUNING.md) for the adaptation log and qualification status.
+
+v0.1.1 keeps the pinned 0.28.0 base but fail-closed backports the later
+DeepSeek fixes that affect this workload: layer-specific main/compressor RoPE
+(#54815), FP32 SM121 router output (#54048), allocator-owned eager temporaries
+(#52836), DeepSeek tool-stream and template corrections (#54838, #48922, and
+#51262), termination-safe speculative structured output (#52805),
+and the relevant DCP slot/cache-group invariants (#51031 and #54277).
+InstantTensor is pinned to its buffered loader with I/O depth 128 so the large
+Vision derivatives do not hit the direct-read tensor-boundary failure.
+
+Check the public tag, platform, digest, and embedded source revision without
+downloading image layers:
+
+```bash
+python3 scripts/check-release-image.py \
+  ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.1 \
+  --expected-digest sha256:4c2c85052dac8f268a7fa15ec75d86cd1001c37cb96bb685eb91b889e6550511 \
+  --expected-revision 6b940202b5ac9d38bb1af198c183f1ada513442a
+```
 
 ## Build
 
@@ -96,7 +118,7 @@ Launch the pinned native Vision checkpoint with TP2 across both Sparks. The
 evaluation profile defaults to DCP1, so each rank retains a complete KV view:
 
 ```bash
-DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.0 \
+DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.1 \
 scripts/launch-two-spark.sh
 ```
 
@@ -111,7 +133,7 @@ release suite verifies both exact-image reuse and changed-image isolation:
 
 ```bash
 MOE_MODE=tp \
-DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.0 \
+DS4FV_IMAGE=ghcr.io/tpurtell/ds4fv-vllm-28-sm12x:v0.1.1 \
 scripts/launch-two-spark.sh
 ```
 
@@ -171,27 +193,32 @@ the mounted Hugging Face cache volume.
 
 The measured results are in [benchmarks/RESULTS.md](benchmarks/RESULTS.md), and
 the frozen-image harness is documented in [benchmarks/README.md](benchmarks/README.md).
-It measures the primary one-Spark Vision EXL3 model with matched FP8 and NVFP4
-runs, plus native Vision TP2+DCP1 with FP8 as the same-build official-model
+It measures pure-K2 and K2.2/D2 one-Spark Vision EXL3 checkpoints with FP8,
+plus native Vision TP2+DCP1 with FP8 as the same-build official-model
 comparison. The suites cover code-agent decode/concurrency and context
 depth curves, unique 8K--128K prefill, the weighted semantic/structured blend,
 tool use, 128K retrieval, role-specific Vision or prefix-cache checks, and a
-post-long-context C4 soak. The harness normally freezes one exact candidate
-image ID; the transparent `v0.1.0` final-digest delta exception and exact
-provenance are documented with the results.
+post-long-context C4 soak. All three v0.1.1 suites use one exact candidate image
+ID and the workstation's pinned 69-case/138-point tool evaluator.
 
 ## Status
 
-Release `v0.1.0` is qualified for arm64 GB10/SM121. The exact release image
-`sha256:dcafc6bf649d70a014ff4350eba85cd7e721dec0ecb9a24ea38bd58401ffe8bd`
-passed final startup, structured/tool, Vision/APC, decode-envelope, and
-post-ready JIT checks. The one-Spark Vision EXL3 default reached
-39.66/58.28/130.24 tok/s at C1/C2/C4 with FP8 KV. For comparison, native
-Vision TP2+DCP1 reached 51.38 tok/s at C1, 137.22 tok/s aggregate at C4, and
-2,081 prompt tok/s at 8K.
-On the exact release image, NVFP4 increased the one-Spark physical KV pool
-from 1.762M to 2.039M tokens (+15.7%) while retaining the same 500K request
-limit.
+Release `v0.1.1` is qualified for arm64 GB10/SM121. Its default one-Spark
+K2.2/D2 FP8 profile passed the complete release gate on exact image
+`sha256:d8a8d361adc3b81b7939fc487c97baa84e520201f1a31269b2dc0f100d94c3ee`,
+including 128K retrieval/replay, Vision cache isolation, tool/structured
+output, a 20-run C4 soak, and zero post-ready JIT. It measured
+39.38/57.75/127.25 tok/s at C1/C2/C4, 1,321 prompt tok/s at 8K, and a
+1,773,796-token physical KV pool.
+
+The same image was fully measured with pure K2 on one Spark and official
+Vision TP2+DCP1 on two Sparks. They provide the requested quantization and
+official-checkpoint comparisons, but are not labeled as passing every strict
+behavior gate: pure K2 scored 34/40 semantic contracts and missed one changed-
+image digit without a cache collision; official Vision scored 36/40 semantic
+contracts. Exact results and raw receipts are in
+[benchmarks/RESULTS.md](benchmarks/RESULTS.md). NVFP4 remains user-selectable
+but is outside the v0.1.1 qualification matrix.
 
 See the [no-GPU contract evidence](validation/2026-09-01-spark-no-gpu.md) and
 [native Vision TP2/EP2 runtime evidence](validation/2026-09-01-spark-tp2-vision.md).
@@ -203,3 +230,7 @@ records why its faster isolated B12x kernel remains opt-in. The mixed K2/K3
 microbenchmark and matched one-Spark full-model gates passed. Reference-logit
 comparison and destructive worker/fabric recovery testing remain future work;
 they are not claims of this release.
+
+The later #53046 post-reasoning speculative-token validation backport is in
+repository `main` after the frozen image revision. It is not claimed as part of
+the v0.1.1 image above.

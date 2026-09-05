@@ -1,12 +1,10 @@
 # Frozen-image release qualification
 
 Release measurements record a full Docker image ID and 40-character recipe
-commit in every receipt; a mutable tag is not release identity. For `v0.1.0`,
-the complete profile suites were retained from their production-candidate
-images and the final digest received a documented delta qualification. This
-avoids pretending that unchanged performance tests become more informative by
-being repeated after startup-warmup and grammar-accounting fixes; the exact
-provenance and exception are recorded in [RESULTS.md](RESULTS.md).
+commit in every receipt; a mutable tag is not release identity. The v0.1.1
+matrix reruns every profile on one exact post-0.28-corrected candidate because
+the RoPE and router fixes can change model numerics. Exact provenance is
+recorded in [RESULTS.md](RESULTS.md).
 
 The workstation is an HTTP client only. It must never start this image, vLLM,
 or GPU code.
@@ -20,20 +18,24 @@ JSON receipt.
 
 | Role | Topology | KV cache | DSpark | Prefix cache | Vision limit |
 | --- | --- | --- | --- | --- | --- |
-| `native-vision` | two SM121 Sparks, TP2+DCP1, merged dual rail | FP8 | fixed greedy K3 | on | 16 images |
-| `exl3-vision` | one SM121 Spark, mixed K2/K3 | FP8 | fixed greedy K3 | on | 16 images |
-| `exl3-vision` matched variant | one SM121 Spark, mixed K2/K3 | NVFP4 DS-MLA | fixed greedy K3 | on | 16 images |
+| Official Vision | two SM121 Sparks, TP2+DCP1, merged dual rail | FP8 | fixed greedy K3 | on | 16 images |
+| Vision EXL3 pure K2 | one SM121 Spark | FP8 | fixed greedy K3 | on | 16 images |
+| Vision EXL3 K2.2/D2 | one SM121 Spark, mixed K2/K3 | FP8 | fixed greedy K3 | on | 16 images |
 
 All profiles expose a 500,000 maximum model length and four scheduler slots.
+K2.2/D2 is the release-qualified default. The pure-K2 and official-model
+profiles are complete comparison suites whose strict model-behavior misses are
+reported in `RESULTS.md`; running every measurement does not relabel a failed
+contract as passed.
 Vision EXL3 uses a 2,048-token batch budget; the smaller chunk bounds transient
 compressor state and measured slightly faster rather than trading away
-prefill. NVFP4 uses the B12x compact sparse-MLA path and must prove a material
-physical KV-capacity increase over the matched FP8 run. The stock adaptive
+prefill. FP8 is the only v0.1.1 qualified KV format; NVFP4 remains selectable
+for experimentation but has no v0.1.1 release claim. The stock adaptive
 verifier is off. The service
 must receive no unrelated traffic during a suite because DSpark acceptance is
 read from process-wide Prometheus counter deltas.
 
-### Auxiliary K6 content profile
+### Historical v0.1.0 auxiliary K6 content profile
 
 The frozen one-Spark image was also measured with fixed greedy K6 as an
 auxiliary content profile. This does not replace the qualified K3 default.
@@ -110,8 +112,10 @@ RECIPE_COMMIT=<40-hex-commit> \
 scripts/run-release-suite.sh
 ```
 
-Run it again with `ROLE=exl3-vision` against the primary one-Spark API, once
-with `KV_CACHE_DTYPE=fp8` and once with `KV_CACHE_DTYPE=nvfp4_ds_mla`.
+Run it twice with `ROLE=exl3-vision` against the one-Spark APIs: once for the
+pure-K2 served model and once for K2.2/D2. `run-release-suite.sh` recognizes
+those two model names plus the official Vision name and rejects any non-FP8
+v0.1.1 evidence run.
 The runner refuses a non-empty output directory and marks its manifest passed
 only after every command exits successfully. It resolves `tool-eval-bench`
 from `PATH`, the adjacent `../tool-eval-bench` checkout through `uv`, or an

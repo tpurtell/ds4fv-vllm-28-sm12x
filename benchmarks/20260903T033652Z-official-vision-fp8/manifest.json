@@ -1,0 +1,49 @@
+{
+  "schema": "ds4fv-release-suite-manifest.v1",
+  "started_utc": "2026-09-03T03:40:42.218074+00:00",
+  "role": "native-vision",
+  "qualification_profile": "official-vision-fp8",
+  "base_url": "http://emu:8000",
+  "model": "deepseek-v4-flash-vision-exp-native",
+  "image_id": "sha256:d8a8d361adc3b81b7939fc487c97baa84e520201f1a31269b2dc0f100d94c3ee",
+  "recipe_commit": "6b940202b5ac9d38bb1af198c183f1ada513442a",
+  "dspark_tokens": 3,
+  "dspark_policy": "fixed",
+  "draft_sample_method": "greedy",
+  "content_contract_floor": 38,
+  "kv_cache_dtype": "fp8",
+  "measurement_hosts": {
+    "performance_content_and_vision": [
+      "emu",
+      "kiwi"
+    ],
+    "long_context_soak_tool_eval_and_jit": [
+      "dodo",
+      "kiwi"
+    ]
+  },
+  "tool_eval_bench": {
+    "artifact": "tool-eval-bench.json",
+    "version": "2.3.2.dev3+g5df1e9e0c",
+    "run_id": "2026-09-03T04-40-08.170267Z_d21c07b4",
+    "scenario_count": 69,
+    "points": 114,
+    "max_points": 138,
+    "normalized_score": 83,
+    "rating": "★★★★ Good",
+    "pass_count": 52,
+    "partial_count": 10,
+    "fail_count": 7,
+    "status": "completed"
+  },
+  "completed_utc": "2026-09-03T04:54:42Z",
+  "passed": false,
+  "failed_gates": [
+    "content semantic contracts: 36/40, below the 38/40 release floor"
+  ],
+  "notes": [
+    "Emu suffered a host-level network outage during the first cold-128K request after the performance/content/Vision phases had completed.",
+    "The interrupted long-context attempt was discarded. The unfinished phases were rerun from scratch on dodo+kiwi with the identical image, model revision, TP2+DCP1 launch configuration, and clean pinned evaluator.",
+    "All deterministic tool, Vision, 128K retrieval/replay, soak, and post-ready JIT checks passed."
+  ]
+}

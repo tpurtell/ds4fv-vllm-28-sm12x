@@ -1,0 +1,31 @@
+{
+  "schema": "ds4fv-release-suite-manifest.v1",
+  "started_utc": "2026-09-03T03:37:00.992658+00:00",
+  "role": "exl3-vision",
+  "qualification_profile": "vision-exl3-k2.2-fp8",
+  "base_url": "http://dodo:8000",
+  "model": "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1",
+  "image_id": "sha256:d8a8d361adc3b81b7939fc487c97baa84e520201f1a31269b2dc0f100d94c3ee",
+  "recipe_commit": "6b940202b5ac9d38bb1af198c183f1ada513442a",
+  "dspark_tokens": 3,
+  "dspark_policy": "fixed",
+  "draft_sample_method": "greedy",
+  "content_contract_floor": 38,
+  "kv_cache_dtype": "fp8",
+  "tool_eval_bench": {
+    "artifact": "tool-eval-bench.json",
+    "version": "2.3.2.dev3+g5df1e9e0c",
+    "run_id": "2026-09-03T04-08-47.517448Z_99d28790",
+    "scenario_count": 69,
+    "points": 113,
+    "max_points": 138,
+    "normalized_score": 82,
+    "rating": "\u2605\u2605\u2605\u2605 Good",
+    "pass_count": 52,
+    "partial_count": 9,
+    "fail_count": 8,
+    "status": "completed"
+  },
+  "completed_utc": "2026-09-03T04:27:01.239923+00:00",
+  "passed": true
+}

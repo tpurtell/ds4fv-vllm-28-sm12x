@@ -1,104 +1,126 @@
-# v0.1.0 performance and qualification results
+# v0.1.1 performance and qualification results
 
-These results cover the release defaults: fixed greedy DSpark K3, prefix
-caching enabled, a 500,000-token maximum model length, and at most four live
-sequences. All throughput numbers are medians from the complete profile suites;
-decode excludes time to first token and sums per-sequence rates at C2/C4.
+These measurements replace the v0.1.0 numbers because the layer-specific RoPE
+and SM121 router fixes change model numerics. Every row uses FP8 KV, prefix
+caching, a 500,000-token maximum model length, four scheduler slots, fixed
+greedy DSpark K3, and the same immutable arm64 candidate.
 
-## Release identity and evidence policy
+## Release identity
 
-The published arm64 image is
-`sha256:dcafc6bf649d70a014ff4350eba85cd7e721dec0ecb9a24ea38bd58401ffe8bd`,
-built from recipe commit `93df1414cd5aa558d7064706e8d37c93651c59c6`. Its
-GHCR manifest digest is
-`sha256:6401b9d020361fa97ad1ac192203fdc5ae38daba3e5625fd48d568e5f9288be8`.
+- OCI image ID:
+  `sha256:d8a8d361adc3b81b7939fc487c97baa84e520201f1a31269b2dc0f100d94c3ee`
+- GHCR manifest digest:
+  `sha256:4c2c85052dac8f268a7fa15ec75d86cd1001c37cb96bb685eb91b889e6550511`
+- Embedded recipe commit:
+  `6b940202b5ac9d38bb1af198c183f1ada513442a`
+- Tool evaluator: `tool-eval-bench 2.3.2.dev3+g5df1e9e0c`, complete
+  69-scenario default matrix, 138 possible points
 
-The complete native suite was measured on its immediate predecessor
-(`63b7e93`, image `sha256:7758b0...`); the only subsequent source changes were
-the exhaustive startup shape warmup and termination-safe xgrammar token-batch
-bookkeeping. The final image then passed the targeted delta package in
-[`20260903T013200Z-final-delta-93df141`](20260903T013200Z-final-delta-93df141/).
-
-The complete one-Spark FP8/NVFP4 suites were measured on candidate `6407692`
-(image `sha256:83fdbf...`). Later shared-image changes either target native
-DCP2 or harden common stream/tokenizer/grammar behavior. Both one-Spark cache
-profiles were therefore started on the exact release image and given light
-decode/API checks instead of duplicating the complete suites. Results below
-remain tied to their original immutable receipts.
-
-Those exact-image checks measured FP8 at 40.08 C1 and 127.70 C4 tok/s (+1.1%
-and -1.9% versus its complete suite) and NVFP4 at 38.55 C1 and 119.78 C4
-tok/s (-1.4% and +0.4%). Both stayed healthy with zero post-ready JIT.
+The one-Spark profiles ran on dodo (K2.2/D2) and ostrich (pure K2). Official
+Vision performance/content/Vision measurements ran on emu+kiwi with TP2+DCP1.
+Emu then suffered a host-level network outage during the first cold-128K
+request; the unfinished 128K replay, soak, and tool matrix were rerun from
+scratch on dodo+kiwi with the identical image, checkpoint revision, launch
+configuration, and evaluator. No partial result from the interrupted request
+is reported.
 
 ## Code-agent decode throughput
 
+Decode excludes time to first token and sums per-sequence rates at C2/C4.
+Values are medians of five measured runs.
+
 | Profile | C1 tok/s | C2 tok/s | C4 tok/s |
 | --- | ---: | ---: | ---: |
-| Native Vision, TP2+DCP1, FP8 | 51.38 | 88.67 | 137.22 |
-| Vision EXL3 K2.2, FP8 | 39.66 | 58.28 | 130.24 |
-| Vision EXL3 K2.2, NVFP4 | 39.11 | 58.40 | 119.28 |
+| Vision EXL3 K2.2/D2, 1 Spark | 39.38 | 57.75 | 127.25 |
+| Vision EXL3 pure K2, 1 Spark | 43.79 | 72.48 | 113.81 |
+| Official Vision, TP2+DCP1 | 49.45 | 86.81 | 133.91 |
 
-Native C1 stayed at 49.77, 49.26, 50.36, and 48.32 tok/s with 8K, 32K,
-64K, and 128K of existing context. FP8 EXL3 measured 37.78, 36.35, 36.55,
-and 34.55 tok/s at the same depths; NVFP4 measured 36.83, 36.83, 36.41, and
-36.54 tok/s.
+### Decode after existing context
+
+| Existing context | K2.2/D2 | Pure K2 | Official Vision |
+| ---: | ---: | ---: | ---: |
+| 0 | 38.89 | 41.17 | 50.51 |
+| 8K | 36.61 | 43.24 | 52.79 |
+| 32K | 36.92 | 42.19 | 52.26 |
+| 64K | 36.57 | 40.72 | 48.30 |
+| 128K | 34.52 | 39.93 | 47.37 |
 
 ## Unique-prompt prefill
 
-| Prompt tokens | Native Vision FP8 | EXL3 FP8 | EXL3 NVFP4 |
-| ---: | ---: | ---: | ---: |
-| 8K | 2,081 | 1,291 | 1,190 |
-| 16K | 2,074 | 1,305 | 1,201 |
-| 32K | 2,010 | 1,314 | 1,199 |
-| 64K | 1,992 | 1,298 | 1,179 |
-| 128K | 1,910 | 1,256 | 1,125 |
-
 Values are effective prompt tokens per second through time to first token.
-Prompts are unique between samples, so these are not prefix-cache hits.
+Every sample uses a unique prompt, so these are not prefix-cache hits.
 
-## Content, structured output, and tool use
+| Prompt tokens | K2.2/D2 | Pure K2 | Official Vision |
+| ---: | ---: | ---: | ---: |
+| 8K | 1,321 | 1,336 | 2,076 |
+| 16K | 1,339 | 1,327 | 2,089 |
+| 32K | 1,340 | 1,330 | 2,042 |
+| 64K | 1,323 | 1,306 | 2,014 |
+| 128K | 1,276 | 1,261 | 1,902 |
 
-| Profile | Weighted content tok/s | Orchid tok/s | Semantic contracts | Structured contracts | Tool eval |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Native Vision FP8 | 44.74 | 71.15 | 39/40 | 10/10 | 114/138 |
-| Vision EXL3 FP8 | 33.03 | 50.77 | 40/40 | 10/10 | 114/138 |
-| Vision EXL3 NVFP4 | 32.85 | 50.67 | 40/40 | 10/10 | 117/138 |
+## Content, structured output, and tools
 
-The structured category gives the normal and constrained JSON arms weight 0.5
-each. The full tool matrix is `tool-eval-bench 2.3.2.dev3+g5df1e9e0c`, run
-locally from `dev3`; it contains TC-01 through TC-69 and has 138 possible
-points. A targeted rerun of the native suite's 18 lost-point cases recovered
-TC38, TC49, and TC53, showing a plausible one-shot range of 114--117 rather
-than a deterministic 114 ceiling. It is not reported as a replacement full
-score.
+Normal JSON and constrained `response_format` JSON have weight 0.5 each, so
+structured output does not dominate the seven-arm weighted content score.
 
-## KV capacity and cache correctness
+| Profile | Weighted tok/s | Orchid tok/s | Semantic | Structured | Tool eval | Pass / partial / fail |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| K2.2/D2 | 32.85 | 50.28 | 38/40 | 10/10 | 113/138 (82/100) | 52 / 9 / 8 |
+| Pure K2 | 38.43 | 61.67 | 34/40 | 10/10 | 112/138 (81/100) | 51 / 10 / 8 |
+| Official Vision | 43.81 | 71.62 | 36/40 | 10/10 | 114/138 (83/100) | 52 / 10 / 7 |
 
-| Profile | Physical KV tokens | 500K request equivalents |
-| --- | ---: | ---: |
-| Native Vision TP2+DCP1 FP8, full-suite startup | 1,184,262 | 2.37x |
-| Vision EXL3 FP8, exact release image | 1,762,308 | 3.52x |
-| Vision EXL3 NVFP4, exact release image | 2,039,387 | 4.08x |
+K2.2/D2 met the 38/40 release floor. Its two misses were exposition samples
+that omitted the required word “paging.” Pure K2 produced an overlong fable
+once and answered all five bare “hi” samples with a long Chinese self-
+introduction that hit the 32-token cap. Official Vision missed three fable
+length/termination checks and one exposition keyword check. All profiles
+passed all ten content-suite structured samples.
 
-NVFP4 adds 277,079 physical tokens, a 15.72% increase over FP8. Both retain
-the production 500K request limit and APC. Exact 128K text replay, 1/4/16-image
-ordering, exact multimodal replay, changed-image collision isolation, and the
-17-image rejection contract all passed for every applicable profile.
+The canonical pure-K2 tool result above comes from the clean pinned evaluator.
+An earlier 116/138 run used an adjacent checkout after its throughput module
+had user changes; it is retained as
+`tool-eval-bench-dirty-throughput-only.json` for diagnosis but is excluded
+from release claims.
 
-## Reliability and final-image delta
+## KV capacity
 
-Every complete suite passed its six-needle 128K retrieval, exact 128K prefix
-replay, deterministic tool-call contract, and 20-request post-context C4 soak.
-The final image additionally passed:
+| Profile | Model load | Available KV | Physical KV tokens | 500K equivalents |
+| --- | ---: | ---: | ---: | ---: |
+| K2.2/D2, 1 Spark | 87.03 GiB | 12.11 GiB | 1,773,796 | 3.55x |
+| Pure K2, 1 Spark | 79.96 GiB | 19.74 GiB | 2,891,548 | 5.78x |
+| Official Vision, fallback TP2+DCP1 limiting rank | 81.67 GiB/rank | 17.49 GiB | 1,083,545 | 2.17x |
 
-- the exact TC31 medium-prompt shape that previously caused late TileLang JIT;
-- 12/12 repeated constrained-JSON requests and 5/5 tool calls;
-- the full 1/4/16-image ladder plus image-17 rejection and Vision APC replay;
-- 40 post-ready requests with zero JIT events, xgrammar/FSM warnings,
-  tracebacks, or server errors.
-- exact-image one-Spark FP8 and NVFP4 startup, matched light decode within 2%
-  of the retained suite medians, and zero post-ready JIT in both modes.
+The official performance host pair initially reported a more conservative
+1,036,135-token pool (2.07x); the fallback pair's different free-memory floor
+explains the capacity change. Both comfortably admit two 500K requests. These
+are physical allocator capacities while the public per-request model limit
+remains 500K.
 
-The detailed method and release gates are in [README.md](README.md). Raw
-receipts live in the three timestamped profile directories and the final delta
-directory beside this file.
+## Correctness and reliability
+
+- K2.2/D2 passed the deterministic tool call, 1/4/16-image ladder, image-17
+  rejection, exact and changed-image Vision APC checks, cold six-needle 128K
+  retrieval, exact 128K replay with 127,744 cache-hit tokens, and 20/20 C4
+  soak. Its startup audit found zero post-ready JIT events across 476 requests.
+- Pure K2 passed the tool call, image ladder/rejection, cold 128K retrieval,
+  exact 128K text replay with 127,744 hit tokens, and 20/20 soak. Its exact
+  Vision replay hit 512 tokens and changed images added zero hits, proving
+  cache isolation; the changed fixture was nevertheless read as `5,5,7,8`
+  instead of `5,6,7,8`, so this is recorded as a model-fidelity failure.
+  Its audit found zero post-ready JIT events across 691 requests.
+- Official Vision passed the tool/Vision checks on emu+kiwi and the clean
+  fallback cold 128K retrieval, exact 128K replay with 127,744 hit tokens, and
+  20/20 C4 soak on dodo+kiwi. The exact clean tool matrix scored 114/138, and
+  the fallback head audit found zero post-ready JIT events across 249 requests.
+
+The default K2.2/D2 profile therefore passes the complete release gate. Pure K2
+and official Vision are published as transparent comparison measurements; they
+are not described as passing every strict model-behavior gate.
+
+## Raw receipts
+
+- [K2.2/D2 one-Spark FP8](20260903T033652Z-vision-exl3-k2.2-fp8/)
+- [Pure-K2 one-Spark FP8](20260903T033652Z-vision-exl3-k2-fp8/)
+- [Official Vision TP2+DCP1 FP8](20260903T033652Z-official-vision-fp8/)
+
+The harness and gate definitions are documented in [README.md](README.md).
